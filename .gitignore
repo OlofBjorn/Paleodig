@@ -1,0 +1,59 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor and IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+
+# Testing and coverage
+coverage/
+.vitest/
+
+# Vite and tooling caches
+.vite/
+.cache/
+.eslintcache
+.turbo/
+
+# Local database data (if you run Postgres via Docker)
+pgdata/
+postgres-data/
+*.sqlite
+*.db
+
+# Hosting platform folders
+.vercel/
+.netlify/
+.fly/
+
+# AI tooling local files (if they contain personal settings or keys)
+.claude/settings.local.json
