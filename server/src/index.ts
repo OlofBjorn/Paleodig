@@ -5,9 +5,7 @@ import { sql } from 'drizzle-orm';
 import { db } from './db/index.js';
 
 const app = Fastify({ logger: true });
-await app.register(cors, {
-  origin: [process.env.CLIENT_ORIGIN || 'http://localhost:5173', 'http://localhost:5174'],
-});
+await app.register(cors, { origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' });
 
 app.get('/health', async () => ({ status: 'ok' }));
 
