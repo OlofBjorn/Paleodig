@@ -10,7 +10,7 @@ await app.register(cors, { origin: process.env.CLIENT_ORIGIN || 'http://localhos
 app.get('/health', async () => ({ status: 'ok' }));
 
 app.get('/api/test', async () => {
-  const result = await db.execute(sql`select * from "TEST"`);
+  const result = await db.execute(sql`select * from "animals"`);
   return result.rows;
 });
 
