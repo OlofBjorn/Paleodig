@@ -1,22 +1,16 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+import Phaser from 'phaser';
+import './style.css';
+import { DigScene } from './scenes/digScene';
 
-const app = document.querySelector<HTMLDivElement>('#app')!;
-app.innerHTML = '<h1>Paleodig</h1><p>Loading...</p>';
-
-async function load() {
-  try {
-    const res = await fetch(`${API_URL}/api/test`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const rows: Record<string, unknown>[] = await res.json();
-
-    const list = rows
-      .map((row) => `<li>${Object.values(row).join(' | ')}</li>`)
-      .join('');
-
-    app.innerHTML = `<h1>Paleodig</h1><ul>${list || '<li>(table is empty)</li>'}</ul>`;
-  } catch (err) {
-    app.innerHTML = `<h1>Paleodig</h1><p>Could not load data: ${String(err)}</p>`;
-  }
-}
-
-load();
+new Phaser.Game({
+  type: Phaser.AUTO,
+  parent: 'app', // the <div id="app"> in index.html
+  width: 800,
+  height: 600,
+  backgroundColor: '#3b2f2a',
+  scene: [DigScene],
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+});
