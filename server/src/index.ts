@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import Fastify from 'fastify';
 import { db } from './db/index'; // adjust if your db export is named differently
 import { itemTypes } from './db/schema';
+import { playerRoutes } from './routes/players';
 
 const app = Fastify({ logger: true });
 
@@ -50,6 +51,8 @@ async function start() {
   await app.register(cors, {
     origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   });
+
+  await app.register(playerRoutes);
 
   const port = Number(process.env.PORT ?? 3000);
   try {

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { dig } from '../api';
+import { dig, type Player } from '../api';
 
 /** Sprint 1 hello-world: one digsite, one button, one result. */
 export class DigScene extends Phaser.Scene {
@@ -12,16 +12,23 @@ export class DigScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
+    this.busy = false;
 
     // Placeholder ground
     this.add.rectangle(width / 2, height * 0.75, width, height * 0.5, 0x6b4f3a);
 
+    const player = this.registry.get('player') as Player;
+    this.add.text(20, 16, `${player.name}  |  Balance: ${player.balance}`, {
+      fontSize: '20px',
+      color: '#f2e8cf',
+    });
+
     this.add
-      .text(width / 2, 50, 'Paleodig', { fontSize: '44px', color: '#f2e8cf' })
+      .text(width / 2, 90, 'Paleodig', { fontSize: '44px', color: '#f2e8cf' })
       .setOrigin(0.5);
 
     this.resultText = this.add
-      .text(width / 2, 210, 'Press DIG to search the quarry.', {
+      .text(width / 2, 230, 'Press DIG to search the quarry.', {
         fontSize: '22px',
         color: '#f2e8cf',
         align: 'center',
