@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+const API_URL =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.PROD ? 'https://paleodig.vercel.app' : 'http://localhost:3000');
 
 export type ItemKind = 'fossil' | 'rock' | 'gem';
 export type ItemSize = 'small' | 'medium' | 'large';
