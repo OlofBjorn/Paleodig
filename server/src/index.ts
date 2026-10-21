@@ -1,8 +1,8 @@
 import cors from '@fastify/cors';
 import { sql } from 'drizzle-orm';
 import Fastify from 'fastify';
-import { db } from './db/index'; // adjust if your db export is named differently
-import { itemTypes } from './db/schema';
+import { db } from './db/index.js';
+import { itemTypes } from './db/schema.js';
 
 const app = Fastify({ logger: true });
 
