@@ -49,7 +49,11 @@ app.post('/api/dig', async (_req, reply) => {
 
 async function start() {
   await app.register(cors, {
-    origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
+    origin: [
+      'https://paleodig-wkvi.vercel.app',
+      'http://localhost:5173',
+      ...(process.env.CLIENT_ORIGIN ? [process.env.CLIENT_ORIGIN] : []),
+    ],
   });
 
   await app.register(playerRoutes);
