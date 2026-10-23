@@ -26,6 +26,14 @@ export class DigScene extends Phaser.Scene {
     this.headerText = this.add.text(20, 16, '', { fontSize: '20px', color: '#f2e8cf' });
     this.refreshHeader();
 
+    const inventoryButton = this.add
+      .rectangle(width - 100, 30, 160, 40, 0xc8963e)
+      .setInteractive({ useHandCursor: true });
+    this.add
+      .text(inventoryButton.x, inventoryButton.y, 'Inventory', { fontSize: '20px', color: '#2b1d14' })
+      .setOrigin(0.5);
+    inventoryButton.on('pointerdown', () => this.scene.start('InventoryScene'));
+
     this.add
       .text(width / 2, 90, 'Paleodig', { fontSize: '44px', color: '#f2e8cf' })
       .setOrigin(0.5);

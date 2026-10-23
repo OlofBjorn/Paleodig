@@ -118,3 +118,21 @@ export function dig(playerId: string): Promise<DigResult> {
     method: 'POST',
   });
 }
+
+/* -------------------------------- inventory ------------------------------- */
+
+export interface Specimen {
+  id: number;
+  status: 'owned' | 'sold';
+  foundAt: string;
+  item: DugItem;
+}
+
+export function fetchInventory(playerId: string): Promise<{ player: Player; specimens: Specimen[] }> {
+  return request(`/api/players/${encodeURIComponent(playerId)}/specimens`);
+}
+
+/** Item images are static files served by the client from public/images/items/. */
+export function itemImageUrl(image: string): string {
+  return `${import.meta.env.BASE_URL}images/items/${encodeURIComponent(image)}`;
+}

@@ -3,18 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import { db } from '../db/index'; // adjust if your db export is named differently
 import { digSites, itemTypes, players, siteSpawns, specimens } from '../db/schema';
 import { pickWeighted } from '../game/weightedPick';
+import { publicItemFields } from '../lib/publicFields';
 import { isUuid } from '../lib/uuid';
-
-// The only item columns the client ever sees. animalId and diagnostic are the hidden answers.
-const publicItemFields = {
-  id: itemTypes.id,
-  kind: itemTypes.kind,
-  name: itemTypes.name,
-  description: itemTypes.description,
-  image: itemTypes.image,
-  size: itemTypes.size,
-  baseValue: itemTypes.baseValue,
-};
 
 export async function digRoutes(app: FastifyInstance) {
   /** Lists dig sites so the client can show the cost. */
