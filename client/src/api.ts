@@ -12,7 +12,14 @@ export interface Player {
   balance: number;
 }
 
-/** What the server sends after a dig. Never includes the hidden animal or diagnostic data. */
+export interface DigSite {
+  id: number;
+  name: string;
+  description: string;
+  digCost: number;
+}
+
+/** What the server sends about an item. Never includes the hidden animal or diagnostic data. */
 export interface DugItem {
   id: number;
   kind: ItemKind;
@@ -21,6 +28,33 @@ export interface DugItem {
   image: string;
   size: ItemSize;
   baseValue: number;
+}
+
+export interface DigResult {
+  specimenId: number;
+  item: DugItem;
+  balance: number;
+}
+
+/* ------------------------------- http helper ------------------------------ */
+
+/** An error response from the server, carrying the HTTP status so scenes can react to it. */
+export class ApiError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, init);
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new ApiError(res.status, body?.error ?? `HTTP ${res.status}`);
+  }
+  return (await res.json()) as T;
 }
 
 /* ----------------------------- session storage ---------------------------- */
@@ -53,33 +87,34 @@ export function clearStoredPlayerId(): void {
 /* --------------------------------- players -------------------------------- */
 
 export async function createPlayer(name: string): Promise<Player> {
-  const res = await fetch(`${API_URL}/api/players`, {
+  const data = await request<{ player: Player }>('/api/players', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
   });
-  if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(body?.error ?? `HTTP ${res.status}`);
-  }
-  const data = (await res.json()) as { player: Player };
   return data.player;
 }
 
 /** Returns null if the server doesn't know this player; throws on any other failure. */
 export async function fetchPlayer(id: string): Promise<Player | null> {
-  const res = await fetch(`${API_URL}/api/players/${encodeURIComponent(id)}`);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = (await res.json()) as { player: Player };
-  return data.player;
+  try {
+    const data = await request<{ player: Player }>(`/api/players/${encodeURIComponent(id)}`);
+    return data.player;
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
 }
 
-/* ----------------------------------- dig ---------------------------------- */
+/* ------------------------------- sites & dig ------------------------------ */
 
-export async function dig(): Promise<DugItem> {
-  const res = await fetch(`${API_URL}/api/dig`, { method: 'POST' });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = (await res.json()) as { item: DugItem };
-  return data.item;
+export async function fetchSites(): Promise<DigSite[]> {
+  const data = await request<{ sites: DigSite[] }>('/api/sites');
+  return data.sites;
+}
+
+export function dig(playerId: string): Promise<DigResult> {
+  return request<DigResult>(`/api/players/${encodeURIComponent(playerId)}/dig`, {
+    method: 'POST',
+  });
 }

@@ -2,8 +2,8 @@ import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { db } from '../db/index'; // adjust if your db export is named differently
 import { players } from '../db/schema';
+import { isUuid } from '../lib/uuid';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_NAME_LENGTH = 40;
 
 // The only player fields the client ever needs.
@@ -36,7 +36,7 @@ export async function playerRoutes(app: FastifyInstance) {
     const { id } = req.params;
 
     // Postgres throws on a malformed uuid, so reject those as "not found" up front.
-    if (!UUID_RE.test(id)) {
+    if (!isUuid(id)) {
       return reply.code(404).send({ error: 'Player not found.' });
     }
 
