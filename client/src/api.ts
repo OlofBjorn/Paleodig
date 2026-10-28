@@ -136,3 +136,16 @@ export function fetchInventory(playerId: string): Promise<{ player: Player; spec
 export function itemImageUrl(image: string): string {
   return `${import.meta.env.BASE_URL}images/items/${encodeURIComponent(image)}`;
 }
+
+export interface SellResult {
+  specimenId: number;
+  earned: number;
+  balance: number;
+}
+
+export function sellSpecimen(playerId: string, specimenId: number): Promise<SellResult> {
+  return request(
+    `/api/players/${encodeURIComponent(playerId)}/specimens/${specimenId}/sell`,
+    { method: 'POST' },
+  );
+}

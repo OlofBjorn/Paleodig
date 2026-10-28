@@ -4,6 +4,7 @@ import {
   clearStoredPlayerId,
   fetchInventory,
   itemImageUrl,
+  sellSpecimen,
   type Player,
   type Specimen,
 } from '../api';
@@ -19,18 +20,23 @@ const GRID_Y = 70;
 // Shown behind each tile, and as the whole tile when an item has no image yet.
 const KIND_COLOR = { fossil: 0xd9c9a3, rock: 0x8a8a8a, gem: 0x6fb7d9 } as const;
 
-/** Lists what the player owns, a page at a time, with a detail panel for the selected item. */
+/** Lists what the player owns, a page at a time, with a detail panel and a Sell button. */
 export class InventoryScene extends Phaser.Scene {
   private player!: Player;
   private specimens: Specimen[] = [];
   private page = 0;
   private selected = 0; // index into this.specimens
+  private busy = false;
+  private confirmSellId: number | null = null; // specimen waiting for a second click
   private tileObjects: Phaser.GameObjects.GameObject[] = [];
   private tileBackgrounds: { index: number; rect: Phaser.GameObjects.Rectangle }[] = [];
   private headerText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
   private detailText!: Phaser.GameObjects.Text;
+  private noticeText!: Phaser.GameObjects.Text;
   private pageText!: Phaser.GameObjects.Text;
+  private sellButton!: Phaser.GameObjects.Rectangle;
+  private sellLabel!: Phaser.GameObjects.Text;
 
   constructor() {
     super('InventoryScene');
@@ -41,6 +47,8 @@ export class InventoryScene extends Phaser.Scene {
     this.specimens = [];
     this.page = 0;
     this.selected = 0;
+    this.busy = false;
+    this.confirmSellId = null;
     this.tileObjects = [];
     this.tileBackgrounds = [];
     this.player = this.registry.get('player') as Player;
@@ -48,15 +56,35 @@ export class InventoryScene extends Phaser.Scene {
     this.headerText = this.add.text(20, 16, '', { fontSize: '20px', color: '#f2e8cf' });
     this.makeButton(width - 100, 30, 160, 40, 'Back to dig', () => this.scene.start('DigScene'));
 
+    // Leaves room on the right for the Sell button.
     this.detailText = this.add.text(20, 428, '', {
       fontSize: '18px',
       color: '#f2e8cf',
-      wordWrap: { width: width - 40 },
+      wordWrap: { width: 540 },
     });
+
+    this.sellButton = this.add
+      .rectangle(width - 120, 470, 200, 44, 0xb5523b)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.sellLabel = this.add
+      .text(this.sellButton.x, this.sellButton.y, '', { fontSize: '18px', color: '#f2e8cf' })
+      .setOrigin(0.5)
+      .setVisible(false);
+    this.sellButton.on('pointerdown', () => void this.onSellClick());
+
+    this.noticeText = this.add
+      .text(width / 2, 538, '', {
+        fontSize: '18px',
+        color: '#f2e8cf',
+        align: 'center',
+        wordWrap: { width: width - 40 },
+      })
+      .setOrigin(0.5);
 
     this.makeButton(90, 570, 130, 36, 'Previous', () => this.changePage(-1));
     this.pageText = this.add
-      .text(width / 2, 570, '', { fontSize: '18px', color: '#f2e8cf' })
+      .text(width / 2, 575, '', { fontSize: '18px', color: '#f2e8cf' })
       .setOrigin(0.5);
     this.makeButton(width - 90, 570, 130, 36, 'Next', () => this.changePage(1));
 
@@ -89,6 +117,9 @@ export class InventoryScene extends Phaser.Scene {
       this.player = data.player;
       this.registry.set('player', this.player);
       this.specimens = data.specimens;
+      // Keep the selection valid if the list changed underneath us.
+      this.selected = Math.min(this.selected, Math.max(0, this.specimens.length - 1));
+      this.page = Math.floor(this.selected / PER_PAGE);
     } catch (err) {
       if (!this.scene.isActive()) return;
       if (err instanceof ApiError && err.status === 404) {
@@ -104,13 +135,17 @@ export class InventoryScene extends Phaser.Scene {
     await this.loadImages();
     if (!this.scene.isActive()) return;
 
+    this.refreshHeader();
+    this.renderPage();
+  }
+
+  private refreshHeader() {
     this.headerText.setText(
       `${this.player.name}  |  Balance: ${this.player.balance}  |  Finds: ${this.specimens.length}`,
     );
     this.statusText.setText(
       this.specimens.length === 0 ? 'Nothing yet. Go dig something up!' : '',
     );
-    this.renderPage();
   }
 
   /**
@@ -187,6 +222,7 @@ export class InventoryScene extends Phaser.Scene {
 
   private select(index: number) {
     this.selected = index;
+    this.confirmSellId = null; // changing selection cancels a pending sale
     // Restyle in place rather than re-rendering, which would destroy the tile being clicked.
     for (const { index: i, rect } of this.tileBackgrounds) {
       const isSelected = i === index;
@@ -196,11 +232,76 @@ export class InventoryScene extends Phaser.Scene {
     const specimen = this.specimens[index];
     if (!specimen) {
       this.detailText.setText('');
+    } else {
+      const { item } = specimen;
+      this.detailText.setText(
+        `${item.name}  (${item.kind}, ${item.size})\n${item.description}\nWorth ${item.baseValue}`,
+      );
+    }
+    this.updateSellButton();
+  }
+
+  private updateSellButton() {
+    const specimen = this.specimens[this.selected];
+    const visible = Boolean(specimen);
+    this.sellButton.setVisible(visible);
+    this.sellLabel.setVisible(visible);
+    if (!specimen) return;
+
+    this.sellLabel.setText(
+      this.confirmSellId === specimen.id ? 'Click to confirm' : `Sell for ${specimen.item.baseValue}`,
+    );
+  }
+
+  private async onSellClick() {
+    if (this.busy) return;
+    const specimen = this.specimens[this.selected];
+    if (!specimen) return;
+
+    // Selling can't be undone, so the first click only arms the button.
+    if (this.confirmSellId !== specimen.id) {
+      this.confirmSellId = specimen.id;
+      this.updateSellButton();
+      this.time.delayedCall(3000, () => {
+        if (this.confirmSellId === specimen.id) {
+          this.confirmSellId = null;
+          this.updateSellButton();
+        }
+      });
       return;
     }
-    const { item } = specimen;
-    this.detailText.setText(
-      `${item.name}  (${item.kind}, ${item.size})\n${item.description}\nWorth ${item.baseValue}`,
-    );
+
+    this.busy = true;
+    this.confirmSellId = null;
+    this.updateSellButton();
+    this.noticeText.setText('Selling...');
+
+    try {
+      const result = await sellSpecimen(this.player.id, specimen.id);
+      if (!this.scene.isActive()) return;
+
+      // The server is the source of truth for the balance.
+      this.player = { ...this.player, balance: result.balance };
+      this.registry.set('player', this.player);
+
+      this.specimens = this.specimens.filter((s) => s.id !== specimen.id);
+      this.selected = Math.min(this.selected, Math.max(0, this.specimens.length - 1));
+      this.page = Math.floor(this.selected / PER_PAGE);
+
+      this.refreshHeader();
+      this.renderPage();
+      this.noticeText.setText(`Sold ${specimen.item.name} for ${result.earned}.`);
+    } catch (err) {
+      if (!this.scene.isActive()) return;
+      if (err instanceof ApiError && (err.status === 404 || err.status === 409)) {
+        // Our list was out of date (for example it was sold in another tab): refresh it.
+        this.noticeText.setText(err.message);
+        await this.loadInventory();
+      } else {
+        this.noticeText.setText(`Could not sell.\n${String(err)}`);
+      }
+    } finally {
+      this.busy = false;
+    }
   }
 }
