@@ -3,7 +3,8 @@ import { db } from './index'; // adjust if your db export is named differently
 import { animals, digSites, itemTypes, siteSpawns } from './schema';
 
 /**
- * Placeholder seed data. Images are empty strings until the art pass.
+ * Placeholder seed data. Each item's image is <slug of its name>.png; until that file exists
+ * the client shows a coloured fallback tile.
  *
  * Built to exercise every end-game outcome:
  *  - Same animal described twice (synonymy): every animal has 2+ distinct fossils,
@@ -20,6 +21,10 @@ type Size = 'small' | 'medium' | 'large';
 const TIER_VALUE: Record<Tier, number> = { high: 120, medium: 60, low: 25 };
 const SIZE_MULTIPLIER: Record<Size, number> = { small: 1, medium: 1.5, large: 2 };
 const TIER_WEIGHT: Record<Tier, number> = { high: 2, medium: 4, low: 6 }; // rarer = more diagnostic
+
+// "Heavy Limb Bone" -> "heavy-limb-bone". Image files are client/public/images/items/<slug>.png
+const slug = (name: string) =>
+  name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const animalData = [
   { genus: 'Tyrannosaurus', species: 'rex' },
@@ -97,7 +102,7 @@ async function seed() {
       kind: 'fossil' as const,
       name: f.name,
       description: f.description,
-      image: '', // placeholder until the art pass
+      image: `${slug(f.name)}.png`,
       size: f.size,
       baseValue: Math.round(TIER_VALUE[f.diagnostic] * SIZE_MULTIPLIER[f.size]),
       animalId: animalIdByGenus.get(f.animal)!,
@@ -109,7 +114,7 @@ async function seed() {
       kind: o.kind,
       name: o.name,
       description: o.description,
-      image: '',
+      image: `${slug(o.name)}.png`,
       size: o.size,
       baseValue: o.baseValue,
     }));

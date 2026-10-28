@@ -48,6 +48,11 @@ export class DigScene extends Phaser.Scene {
       .rectangle(width - 100, 30, 160, 40, 0xc8963e)
       .setInteractive({ useHandCursor: true });
     this.add
+      .text(inventoryButton.x, inventoryButton.y, 'Inventory', { fontSize: '20px', color: '#2b1d14' })
+      .setOrigin(0.5);
+    inventoryButton.on('pointerdown', () => this.scene.start('InventoryScene'));
+
+    this.add
       .text(inventoryButton.x, inventoryButton.y, 'Inventory', {
         fontSize: '20px',
         color: '#2b1d14',
