@@ -1,6 +1,12 @@
 import Phaser from 'phaser';
 import { ApiError, clearStoredPlayerId, dig, fetchSites, type DigSite, type Player } from '../api';
 
+const BACKGROUND_KEY = 'quarry-background';
+const BACKGROUND_URL = `${import.meta.env.BASE_URL}images/quarry.png`;
+
+// A dark outline keeps text readable on top of any background image.
+const TEXT = { color: '#f2e8cf', stroke: '#1e1612', strokeThickness: 4 };
+
 /** The dig screen: shows the player's balance, the dig cost, and what each dig turns up. */
 export class DigScene extends Phaser.Scene {
   private player!: Player;
@@ -14,26 +20,47 @@ export class DigScene extends Phaser.Scene {
     super('DigScene');
   }
 
+  preload() {
+    // A missing file is fine: no texture is created and create() falls back to a plain ground.
+    if (!this.textures.exists(BACKGROUND_KEY)) {
+      this.load.image(BACKGROUND_KEY, BACKGROUND_URL);
+    }
+  }
+
   create() {
     const { width, height } = this.scale;
     this.busy = false;
     this.site = null;
     this.player = this.registry.get('player') as Player;
 
-    // Placeholder ground
-    this.add.rectangle(width / 2, height * 0.75, width, height * 0.5, 0x6b4f3a);
+    if (this.textures.exists(BACKGROUND_KEY)) {
+      // "Cover" scaling: fill the whole screen without distorting the image.
+      const background = this.add.image(width / 2, height / 2, BACKGROUND_KEY);
+      background.setScale(Math.max(width / background.width, height / background.height));
+    } else {
+      this.add.rectangle(width / 2, height * 0.75, width, height * 0.5, 0x6b4f3a);
+    }
 
-    this.headerText = this.add.text(20, 16, '', { fontSize: '20px', color: '#f2e8cf' });
+    this.headerText = this.add.text(20, 16, '', { fontSize: '20px', ...TEXT });
     this.refreshHeader();
 
+    const inventoryButton = this.add
+      .rectangle(width - 100, 30, 160, 40, 0xc8963e)
+      .setInteractive({ useHandCursor: true });
     this.add
-      .text(width / 2, 90, 'Paleodig', { fontSize: '44px', color: '#f2e8cf' })
+      .text(inventoryButton.x, inventoryButton.y, 'Inventory', {
+        fontSize: '20px',
+        color: '#2b1d14',
+      })
       .setOrigin(0.5);
+    inventoryButton.on('pointerdown', () => this.scene.start('InventoryScene'));
+
+    this.add.text(width / 2, 90, 'Paleodig', { fontSize: '44px', ...TEXT }).setOrigin(0.5);
 
     this.resultText = this.add
       .text(width / 2, 230, 'Press DIG to search the quarry.', {
         fontSize: '22px',
-        color: '#f2e8cf',
+        ...TEXT,
         align: 'center',
         wordWrap: { width: width - 120 },
       })
@@ -46,7 +73,7 @@ export class DigScene extends Phaser.Scene {
       .text(button.x, button.y, 'DIG', { fontSize: '32px', color: '#2b1d14' })
       .setOrigin(0.5);
     this.costText = this.add
-      .text(button.x, button.y + 50, '', { fontSize: '18px', color: '#f2e8cf' })
+      .text(button.x, button.y + 50, '', { fontSize: '18px', ...TEXT })
       .setOrigin(0.5);
 
     button.on('pointerdown', () => void this.onDig());
@@ -60,6 +87,7 @@ export class DigScene extends Phaser.Scene {
   private async loadSite() {
     try {
       const sites = await fetchSites();
+      if (!this.scene.isActive()) return; // the player left while we were waiting
       this.site = sites[0] ?? null;
       if (this.site) this.costText.setText(`Costs ${this.site.digCost} per dig`);
     } catch {

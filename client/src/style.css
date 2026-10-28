@@ -5,9 +5,3 @@ body,
   height: 100%;
   background: #1e1612;
 }
-
-#app {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
