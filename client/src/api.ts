@@ -121,11 +121,19 @@ export function dig(playerId: string): Promise<DigResult> {
 
 /* -------------------------------- inventory ------------------------------- */
 
+/** The player's own current name for a specimen. isHolotype: it is the holotype of that genus. */
+export interface SpecimenName {
+  genus: string;
+  species: string;
+  isHolotype: boolean;
+}
+
 export interface Specimen {
   id: number;
   status: 'owned' | 'sold';
   foundAt: string;
   item: DugItem;
+  name: SpecimenName | null;
 }
 
 export function fetchInventory(playerId: string): Promise<{ player: Player; specimens: Specimen[] }> {
@@ -148,4 +156,37 @@ export function sellSpecimen(playerId: string, specimenId: number): Promise<Sell
     `/api/players/${encodeURIComponent(playerId)}/specimens/${specimenId}/sell`,
     { method: 'POST' },
   );
+}
+
+/* --------------------------------- naming --------------------------------- */
+
+export interface NameResult {
+  specimenId: number;
+  genus: string;
+  species: string;
+  genusCreated: boolean;
+  taxonCreated: boolean;
+  invalidatedGenus: string | null;
+}
+
+export function nameSpecimen(
+  playerId: string,
+  specimenId: number,
+  genus: string,
+  species: string,
+): Promise<NameResult> {
+  return request(`/api/players/${encodeURIComponent(playerId)}/specimens/${specimenId}/name`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ genus, species }),
+  });
+}
+
+export function unnameSpecimen(
+  playerId: string,
+  specimenId: number,
+): Promise<{ specimenId: number; invalidatedGenus: string | null }> {
+  return request(`/api/players/${encodeURIComponent(playerId)}/specimens/${specimenId}/name`, {
+    method: 'DELETE',
+  });
 }

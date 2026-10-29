@@ -32,6 +32,7 @@ export async function specimenRoutes(app: FastifyInstance) {
         item: publicItemFields,
         genus: genera.name,
         species: taxa.speciesName,
+        genusHolotypeId: genera.holotypeSpecimenId,
       })
       .from(specimens)
       .innerJoin(itemTypes, eq(itemTypes.id, specimens.itemTypeId))
@@ -41,9 +42,11 @@ export async function specimenRoutes(app: FastifyInstance) {
       .orderBy(desc(specimens.foundAt), desc(specimens.id));
 
     // name is the player's own current name for the specimen, or null if unnamed.
-    const owned = rows.map(({ genus, species, ...rest }) => ({
+    // isHolotype: this specimen is the holotype of the (valid) genus it is currently named in.
+    const owned = rows.map(({ genus, species, genusHolotypeId, ...rest }) => ({
       ...rest,
-      name: genus && species ? { genus, species } : null,
+      name:
+        genus && species ? { genus, species, isHolotype: genusHolotypeId === rest.id } : null,
     }));
 
     return { player, specimens: owned };

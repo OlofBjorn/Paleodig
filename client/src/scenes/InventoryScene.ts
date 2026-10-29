@@ -4,10 +4,14 @@ import {
   clearStoredPlayerId,
   fetchInventory,
   itemImageUrl,
+  nameSpecimen,
   sellSpecimen,
+  unnameSpecimen,
+  type NameResult,
   type Player,
   type Specimen,
 } from '../api';
+import { NamingDialog } from '../ui/NamingDialog';
 
 const COLS = 7;
 const ROWS = 3;
@@ -20,7 +24,16 @@ const GRID_Y = 70;
 // Shown behind each tile, and as the whole tile when an item has no image yet.
 const KIND_COLOR = { fossil: 0xd9c9a3, rock: 0x8a8a8a, gem: 0x6fb7d9 } as const;
 
-/** Lists what the player owns, a page at a time, with a detail panel and a Sell button. */
+function describeNaming(r: NameResult): string {
+  const parts = [`Named ${r.genus} ${r.species}.`];
+  if (r.genusCreated) parts.push(`New genus: this specimen is the holotype of ${r.genus}.`);
+  else if (r.taxonCreated) parts.push('New species in an existing genus.');
+  else parts.push('Grouped with the other specimens of this species.');
+  if (r.invalidatedGenus) parts.push(`Warning: ${r.invalidatedGenus} is no longer valid.`);
+  return parts.join(' ');
+}
+
+/** Lists what the player owns, with a detail panel and Name / Sell buttons. */
 export class InventoryScene extends Phaser.Scene {
   private player!: Player;
   private specimens: Specimen[] = [];
@@ -28,6 +41,7 @@ export class InventoryScene extends Phaser.Scene {
   private selected = 0; // index into this.specimens
   private busy = false;
   private confirmSellId: number | null = null; // specimen waiting for a second click
+  private dialog: NamingDialog | null = null;
   private tileObjects: Phaser.GameObjects.GameObject[] = [];
   private tileBackgrounds: { index: number; rect: Phaser.GameObjects.Rectangle }[] = [];
   private headerText!: Phaser.GameObjects.Text;
@@ -37,6 +51,8 @@ export class InventoryScene extends Phaser.Scene {
   private pageText!: Phaser.GameObjects.Text;
   private sellButton!: Phaser.GameObjects.Rectangle;
   private sellLabel!: Phaser.GameObjects.Text;
+  private nameButton!: Phaser.GameObjects.Rectangle;
+  private nameLabel!: Phaser.GameObjects.Text;
 
   constructor() {
     super('InventoryScene');
@@ -49,19 +65,31 @@ export class InventoryScene extends Phaser.Scene {
     this.selected = 0;
     this.busy = false;
     this.confirmSellId = null;
+    this.dialog = null;
     this.tileObjects = [];
     this.tileBackgrounds = [];
     this.player = this.registry.get('player') as Player;
+    this.events.once('shutdown', () => this.closeDialog());
 
     this.headerText = this.add.text(20, 16, '', { fontSize: '20px', color: '#f2e8cf' });
     this.makeButton(width - 100, 30, 160, 40, 'Back to dig', () => this.scene.start('DigScene'));
 
-    // Leaves room on the right for the Sell button.
+    // Leaves room on the right for the Name and Sell buttons.
     this.detailText = this.add.text(20, 428, '', {
       fontSize: '18px',
       color: '#f2e8cf',
       wordWrap: { width: 540 },
     });
+
+    this.nameButton = this.add
+      .rectangle(width - 120, 418, 200, 40, 0x4a7a5a)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.nameLabel = this.add
+      .text(this.nameButton.x, this.nameButton.y, 'Name', { fontSize: '18px', color: '#f2e8cf' })
+      .setOrigin(0.5)
+      .setVisible(false);
+    this.nameButton.on('pointerdown', () => this.openNaming());
 
     this.sellButton = this.add
       .rectangle(width - 120, 470, 200, 44, 0xb5523b)
@@ -215,6 +243,13 @@ export class InventoryScene extends Phaser.Scene {
             .setOrigin(0.5),
         );
       }
+
+      // A green dot marks specimens that have been given a name.
+      if (specimen.name) {
+        this.tileObjects.push(
+          this.add.circle(x + TILE / 2 - 13, y - TILE / 2 + 13, 7, 0x4caf50).setStrokeStyle(2, 0x1e1612),
+        );
+      }
     });
 
     this.select(this.selected);
@@ -233,12 +268,26 @@ export class InventoryScene extends Phaser.Scene {
     if (!specimen) {
       this.detailText.setText('');
     } else {
-      const { item } = specimen;
+      const { item, name } = specimen;
+      const named = name
+        ? `\nNamed: ${name.genus} ${name.species}${name.isHolotype ? ` (holotype of ${name.genus})` : ''}`
+        : '';
       this.detailText.setText(
-        `${item.name}  (${item.kind}, ${item.size})\n${item.description}\nWorth ${item.baseValue}`,
+        `${item.name}  (${item.kind}, ${item.size})\n${item.description}\nWorth ${item.baseValue}${named}`,
       );
     }
     this.updateSellButton();
+    this.updateNameButton();
+  }
+
+  private updateNameButton() {
+    const specimen = this.specimens[this.selected];
+    const visible = Boolean(specimen && specimen.item.kind === 'fossil');
+    this.nameButton.setVisible(visible);
+    this.nameLabel.setVisible(visible);
+    if (specimen && visible) {
+      this.nameLabel.setText(specimen.name ? 'Rename' : 'Name');
+    }
   }
 
   private updateSellButton() {
@@ -253,6 +302,74 @@ export class InventoryScene extends Phaser.Scene {
     );
   }
 
+  /* -------------------------------- naming -------------------------------- */
+
+  private openNaming() {
+    const specimen = this.specimens[this.selected];
+    if (!specimen || specimen.item.kind !== 'fossil' || this.busy || this.dialog) return;
+
+    this.noticeText.setText('');
+    this.dialog = new NamingDialog(this, specimen, {
+      onSubmit: (genus, species) => this.submitName(specimen, genus, species),
+      onRemove: specimen.name ? () => this.removeName(specimen) : undefined,
+      onClose: () => this.closeDialog(),
+    });
+  }
+
+  private closeDialog() {
+    this.dialog?.destroy();
+    this.dialog = null;
+  }
+
+  private async submitName(specimen: Specimen, genus: string, species: string): Promise<string | null> {
+    try {
+      const result = await nameSpecimen(this.player.id, specimen.id, genus, species);
+      if (!this.scene.isActive()) return null;
+      this.closeDialog();
+      await this.loadInventory(); // names and holotype flags can change on other specimens too
+      if (this.scene.isActive()) this.noticeText.setText(describeNaming(result));
+      return null;
+    } catch (err) {
+      return this.dialogError(err);
+    }
+  }
+
+  private async removeName(specimen: Specimen): Promise<string | null> {
+    try {
+      const result = await unnameSpecimen(this.player.id, specimen.id);
+      if (!this.scene.isActive()) return null;
+      this.closeDialog();
+      await this.loadInventory();
+      if (this.scene.isActive()) {
+        this.noticeText.setText(
+          result.invalidatedGenus
+            ? `Name removed. Warning: ${result.invalidatedGenus} is no longer valid.`
+            : 'Name removed.',
+        );
+      }
+      return null;
+    } catch (err) {
+      return this.dialogError(err);
+    }
+  }
+
+  /** Turns a failed request into the text shown inside the dialog (null = nothing to show). */
+  private dialogError(err: unknown): string | null {
+    if (!this.scene.isActive()) return null;
+    if (err instanceof ApiError) {
+      if (err.status === 404) {
+        // The specimen or player vanished: close and refresh from the server.
+        this.closeDialog();
+        void this.loadInventory();
+        return null;
+      }
+      return err.message;
+    }
+    return `Could not reach the server.\n${String(err)}`;
+  }
+
+  /* --------------------------------- selling ------------------------------- */
+
   private async onSellClick() {
     if (this.busy) return;
     const specimen = this.specimens[this.selected];
@@ -262,6 +379,11 @@ export class InventoryScene extends Phaser.Scene {
     if (this.confirmSellId !== specimen.id) {
       this.confirmSellId = specimen.id;
       this.updateSellButton();
+      this.noticeText.setText(
+        specimen.name?.isHolotype
+          ? `Warning: this is the holotype of ${specimen.name.genus}. Selling it makes that genus invalid for good.`
+          : '',
+      );
       this.time.delayedCall(3000, () => {
         if (this.confirmSellId === specimen.id) {
           this.confirmSellId = null;
@@ -290,7 +412,10 @@ export class InventoryScene extends Phaser.Scene {
 
       this.refreshHeader();
       this.renderPage();
-      this.noticeText.setText(`Sold ${specimen.item.name} for ${result.earned}.`);
+      const invalidated = specimen.name?.isHolotype
+        ? ` The genus ${specimen.name.genus} is now invalid.`
+        : '';
+      this.noticeText.setText(`Sold ${specimen.item.name} for ${result.earned}.${invalidated}`);
     } catch (err) {
       if (!this.scene.isActive()) return;
       if (err instanceof ApiError && (err.status === 404 || err.status === 409)) {

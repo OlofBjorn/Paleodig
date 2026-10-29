@@ -23,6 +23,7 @@ app.get('/api/health', async (_req, reply) => {
 async function start() {
   await app.register(cors, {
     origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
+    methods: ['GET', 'HEAD', 'POST', 'DELETE'], // the default only allows GET, HEAD and POST
   });
 
   await app.register(playerRoutes);
