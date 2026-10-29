@@ -190,3 +190,29 @@ export function unnameSpecimen(
     method: 'DELETE',
   });
 }
+
+/* ------------------------------- discoveries ------------------------------ */
+
+export interface DiscoveredSpecies {
+  id: number;
+  name: string;
+  specimens: { id: number; itemName: string }[];
+}
+
+export interface DiscoveredGenus {
+  id: number;
+  name: string;
+  valid: boolean;
+  /** Why an invalid genus is invalid. */
+  invalidReason: 'sold' | 'unnamed' | 'moved' | null;
+  holotype: { specimenId: number; itemName: string; sold: boolean };
+  species: DiscoveredSpecies[];
+}
+
+export interface Discoveries {
+  genera: DiscoveredGenus[];
+}
+
+export function fetchDiscoveries(playerId: string): Promise<Discoveries> {
+  return request(`/api/players/${encodeURIComponent(playerId)}/discoveries`);
+}
