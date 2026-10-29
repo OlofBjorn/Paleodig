@@ -1,7 +1,7 @@
 import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { db } from '../db/index'; // adjust if your db export is named differently
-import { itemTypes, players, specimens } from '../db/schema';
+import { genera, itemTypes, players, specimens, taxa } from '../db/schema';
 import { HttpError } from '../lib/httpError';
 import { publicItemFields } from '../lib/publicFields';
 import { isUuid } from '../lib/uuid';
@@ -24,17 +24,27 @@ export async function specimenRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: 'Player not found.' });
     }
 
-    const owned = await db
+    const rows = await db
       .select({
         id: specimens.id,
         status: specimens.status,
         foundAt: specimens.foundAt,
         item: publicItemFields,
+        genus: genera.name,
+        species: taxa.speciesName,
       })
       .from(specimens)
       .innerJoin(itemTypes, eq(itemTypes.id, specimens.itemTypeId))
+      .leftJoin(taxa, eq(taxa.id, specimens.taxonId))
+      .leftJoin(genera, eq(genera.id, taxa.genusId))
       .where(and(eq(specimens.playerId, id), eq(specimens.status, 'owned')))
       .orderBy(desc(specimens.foundAt), desc(specimens.id));
+
+    // name is the player's own current name for the specimen, or null if unnamed.
+    const owned = rows.map(({ genus, species, ...rest }) => ({
+      ...rest,
+      name: genus && species ? { genus, species } : null,
+    }));
 
     return { player, specimens: owned };
   });
