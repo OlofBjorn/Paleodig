@@ -1,18 +1,16 @@
 import Phaser from 'phaser';
-import { ApiError, clearStoredPlayerId, dig, fetchSites, type DigSite, type Player } from '../api';
-
-const BACKGROUND_KEY = 'quarry-background';
-const BACKGROUND_URL = `${import.meta.env.BASE_URL}images/quarry.png`;
+import { ApiError, clearStoredPlayerId, dig, type DigSite, type Player } from '../api';
+import { siteTextureKey } from '../ui/loadTextures';
 
 // A dark outline keeps text readable on top of any background image.
 const TEXT = { color: '#f2e8cf', stroke: '#1e1612', strokeThickness: 4 };
 
-/** The dig screen: shows the player's balance, the dig cost, and what each dig turns up. */
+/** The dig screen for one site: shows the balance, the cost, and what each dig turns up. */
 export class DigScene extends Phaser.Scene {
   private player!: Player;
-  private site: DigSite | null = null;
+  private site!: DigSite;
+  private siteId: number | null = null;
   private headerText!: Phaser.GameObjects.Text;
-  private costText!: Phaser.GameObjects.Text;
   private resultText!: Phaser.GameObjects.Text;
   private busy = false;
 
@@ -20,22 +18,29 @@ export class DigScene extends Phaser.Scene {
     super('DigScene');
   }
 
-  preload() {
-    // A missing file is fine: no texture is created and create() falls back to a plain ground.
-    if (!this.textures.exists(BACKGROUND_KEY)) {
-      this.load.image(BACKGROUND_KEY, BACKGROUND_URL);
-    }
+  init(data: { siteId?: number }) {
+    // Coming back from the inventory passes no data, so fall back to the last chosen site.
+    this.siteId = data.siteId ?? (this.registry.get('siteId') as number | undefined) ?? null;
   }
 
   create() {
     const { width, height } = this.scale;
     this.busy = false;
-    this.site = null;
     this.player = this.registry.get('player') as Player;
 
-    if (this.textures.exists(BACKGROUND_KEY)) {
+    // The site list is loaded by the select screen. If it isn't there, go back and get it.
+    const sites = (this.registry.get('sites') as DigSite[] | undefined) ?? [];
+    const site = sites.find((s) => s.id === this.siteId);
+    if (!site) {
+      this.scene.start('SiteSelectScene');
+      return;
+    }
+    this.site = site;
+
+    const key = siteTextureKey(site.image);
+    if (site.image && this.textures.exists(key)) {
       // "Cover" scaling: fill the whole screen without distorting the image.
-      const background = this.add.image(width / 2, height / 2, BACKGROUND_KEY);
+      const background = this.add.image(width / 2, height / 2, key);
       background.setScale(Math.max(width / background.width, height / background.height));
     } else {
       this.add.rectangle(width / 2, height * 0.75, width, height * 0.5, 0x6b4f3a);
@@ -44,32 +49,18 @@ export class DigScene extends Phaser.Scene {
     this.headerText = this.add.text(20, 16, '', { fontSize: '20px', ...TEXT });
     this.refreshHeader();
 
-    const inventoryButton = this.add
-      .rectangle(width - 100, 30, 160, 40, 0xc8963e)
-      .setInteractive({ useHandCursor: true });
-    this.add
-      .text(inventoryButton.x, inventoryButton.y, 'Inventory', {
-        fontSize: '20px',
-        color: '#2b1d14',
-      })
-      .setOrigin(0.5);
-    inventoryButton.on('pointerdown', () => this.scene.start('InventoryScene'));
+    this.makeButton(100, 70, 160, 36, 'Change site', () => this.scene.start('SiteSelectScene'));
+    this.makeButton(width - 100, 30, 160, 40, 'Inventory', () =>
+      this.scene.start('InventoryScene', { from: 'DigScene' }),
+    );
+    this.makeButton(width - 100, 78, 160, 40, 'Discoveries', () =>
+      this.scene.start('DiscoveriesScene', { from: 'DigScene' }),
+    );
 
-    const discoveriesButton = this.add
-      .rectangle(width - 100, 78, 160, 40, 0xc8963e)
-      .setInteractive({ useHandCursor: true });
-    this.add
-      .text(discoveriesButton.x, discoveriesButton.y, 'Discoveries', {
-        fontSize: '20px',
-        color: '#2b1d14',
-      })
-      .setOrigin(0.5);
-    discoveriesButton.on('pointerdown', () => this.scene.start('DiscoveriesScene'));
-
-    this.add.text(width / 2, 90, 'Paleodig', { fontSize: '44px', ...TEXT }).setOrigin(0.5);
+    this.add.text(width / 2, 100, site.name, { fontSize: '38px', ...TEXT }).setOrigin(0.5);
 
     this.resultText = this.add
-      .text(width / 2, 230, 'Press DIG to search the quarry.', {
+      .text(width / 2, 240, 'Press DIG to search the site.', {
         fontSize: '22px',
         ...TEXT,
         align: 'center',
@@ -83,27 +74,20 @@ export class DigScene extends Phaser.Scene {
     this.add
       .text(button.x, button.y, 'DIG', { fontSize: '32px', color: '#2b1d14' })
       .setOrigin(0.5);
-    this.costText = this.add
-      .text(button.x, button.y + 50, '', { fontSize: '18px', ...TEXT })
+    this.add
+      .text(button.x, button.y + 50, `Costs ${site.digCost} per dig`, { fontSize: '18px', ...TEXT })
       .setOrigin(0.5);
-
     button.on('pointerdown', () => void this.onDig());
-    void this.loadSite();
+  }
+
+  private makeButton(x: number, y: number, w: number, h: number, label: string, onClick: () => void) {
+    const rect = this.add.rectangle(x, y, w, h, 0xc8963e).setInteractive({ useHandCursor: true });
+    this.add.text(x, y, label, { fontSize: '20px', color: '#2b1d14' }).setOrigin(0.5);
+    rect.on('pointerdown', onClick);
   }
 
   private refreshHeader() {
     this.headerText.setText(`${this.player.name}  |  Balance: ${this.player.balance}`);
-  }
-
-  private async loadSite() {
-    try {
-      const sites = await fetchSites();
-      if (!this.scene.isActive()) return; // the player left while we were waiting
-      this.site = sites[0] ?? null;
-      if (this.site) this.costText.setText(`Costs ${this.site.digCost} per dig`);
-    } catch {
-      // The cost label just stays empty; the server enforces the real cost either way.
-    }
   }
 
   private async onDig() {
@@ -112,7 +96,7 @@ export class DigScene extends Phaser.Scene {
     this.resultText.setText('Digging...');
 
     try {
-      const result = await dig(this.player.id);
+      const result = await dig(this.player.id, this.site.id);
 
       // The server is the source of truth for the balance.
       this.player = { ...this.player, balance: result.balance };
@@ -126,6 +110,10 @@ export class DigScene extends Phaser.Scene {
     } catch (err) {
       if (err instanceof ApiError && err.status === 402) {
         this.resultText.setText('Not enough money to dig.');
+      } else if (err instanceof ApiError && err.status === 404 && /site/i.test(err.message)) {
+        // The site list is out of date (for example after a re-seed): pick again.
+        this.scene.start('SiteSelectScene');
+        return;
       } else if (err instanceof ApiError && err.status === 404) {
         // The server no longer knows this player (e.g. the database was reset): start over.
         clearStoredPlayerId();

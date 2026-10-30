@@ -1,13 +1,13 @@
 import { and, asc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { db } from '../db/index'; // adjust if your db export is named differently
-import { genera, itemTypes, players, specimens, taxa } from '../db/schema';
+import { digSites, genera, itemTypes, players, specimens, taxa } from '../db/schema';
 import { isUuid } from '../lib/uuid';
 
 type SpeciesEntry = {
   id: number;
   name: string;
-  specimens: { id: number; itemName: string }[];
+  specimens: { id: number; itemName: string; siteName: string | null }[];
 };
 
 export async function discoveryRoutes(app: FastifyInstance) {
@@ -52,6 +52,7 @@ export async function discoveryRoutes(app: FastifyInstance) {
       .select({
         specimenId: specimens.id,
         itemName: itemTypes.name,
+        siteName: digSites.name,
         taxonId: taxa.id,
         genusId: taxa.genusId,
         speciesName: taxa.speciesName,
@@ -59,6 +60,7 @@ export async function discoveryRoutes(app: FastifyInstance) {
       .from(specimens)
       .innerJoin(itemTypes, eq(itemTypes.id, specimens.itemTypeId))
       .innerJoin(taxa, eq(taxa.id, specimens.taxonId))
+      .leftJoin(digSites, eq(digSites.id, specimens.foundSiteId))
       .where(and(eq(specimens.playerId, id), eq(specimens.status, 'owned')))
       .orderBy(asc(taxa.createdAt), asc(taxa.id), asc(specimens.id));
 
@@ -74,7 +76,7 @@ export async function discoveryRoutes(app: FastifyInstance) {
         specimens: [],
       };
       bySpecies.set(row.taxonId, entry);
-      entry.specimens.push({ id: row.specimenId, itemName: row.itemName });
+      entry.specimens.push({ id: row.specimenId, itemName: row.itemName, siteName: row.siteName });
     }
 
     const result = generaRows.map((g) => {

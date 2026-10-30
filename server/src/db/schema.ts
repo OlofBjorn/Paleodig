@@ -67,6 +67,7 @@ export const digSites = pgTable('dig_sites', {
   id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
   name: text('name').notNull(),
   description: text('description').notNull(),
+  image: text('image').notNull().default(''), // file in client/public/images/sites/
   digCost: integer('dig_cost').notNull(),
 });
 
@@ -124,6 +125,8 @@ export const specimens = pgTable(
     taxonId: integer('taxon_id').references((): AnyPgColumn => taxa.id, {
       onDelete: 'set null',
     }),
+    // Where it was dug up. Null only for specimens found before dig sites were tracked.
+    foundSiteId: integer('found_site_id').references(() => digSites.id),
     foundAt: timestamp('found_at', { withTimezone: true }).notNull().defaultNow(),
     soldAt: timestamp('sold_at', { withTimezone: true }),
   },

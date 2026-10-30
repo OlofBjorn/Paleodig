@@ -32,7 +32,7 @@ export class BootScene extends Phaser.Scene {
       const player = await fetchPlayer(storedId);
       if (player) {
         this.registry.set('player', player);
-        this.scene.start('DigScene');
+        this.scene.start('SiteSelectScene');
       } else {
         // The server doesn't know this id (e.g. the database was reset): start fresh.
         clearStoredPlayerId();

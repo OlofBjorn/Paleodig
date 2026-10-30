@@ -14,6 +14,7 @@ export async function digRoutes(app: FastifyInstance) {
         id: digSites.id,
         name: digSites.name,
         description: digSites.description,
+        image: digSites.image,
         digCost: digSites.digCost,
       })
       .from(digSites)
@@ -38,6 +39,10 @@ export async function digRoutes(app: FastifyInstance) {
       const rawSiteId = req.body?.siteId;
       if (rawSiteId !== undefined && !Number.isInteger(rawSiteId)) {
         return reply.code(400).send({ error: 'siteId must be an integer.' });
+      }
+      // Postgres integers top out at 2147483647; anything outside that can't be a real site.
+      if (typeof rawSiteId === 'number' && (rawSiteId < 1 || rawSiteId > 2147483647)) {
+        return reply.code(404).send({ error: 'Dig site not found.' });
       }
 
       const outcome = await db.transaction(async (tx) => {
@@ -95,7 +100,7 @@ export async function digRoutes(app: FastifyInstance) {
 
         const [specimen] = await tx
           .insert(specimens)
-          .values({ playerId: id, itemTypeId: picked.item.id })
+          .values({ playerId: id, itemTypeId: picked.item.id, foundSiteId: site.id })
           .returning({ id: specimens.id });
 
         return {

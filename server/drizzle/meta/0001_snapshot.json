@@ -1,0 +1,734 @@
+{
+  "id": "39a10183-a0f3-4284-8c3e-a0cb995a214e",
+  "prevId": "cadb3f51-85c5-4520-85c2-f23bf6aeaf69",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.animals": {
+      "name": "animals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "byDefault",
+            "name": "animals_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "genus": {
+          "name": "genus",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "species": {
+          "name": "species",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "animals_genus_species_unique": {
+          "name": "animals_genus_species_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "genus",
+            "species"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.dig_sites": {
+      "name": "dig_sites",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "byDefault",
+            "name": "dig_sites_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "dig_cost": {
+          "name": "dig_cost",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.genera": {
+      "name": "genera",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "genera_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "holotype_specimen_id": {
+          "name": "holotype_specimen_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "genera_player_id_players_id_fk": {
+          "name": "genera_player_id_players_id_fk",
+          "tableFrom": "genera",
+          "tableTo": "players",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "genera_holotype_specimen_id_specimens_id_fk": {
+          "name": "genera_holotype_specimen_id_specimens_id_fk",
+          "tableFrom": "genera",
+          "tableTo": "specimens",
+          "columnsFrom": [
+            "holotype_specimen_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "genera_player_name_unique": {
+          "name": "genera_player_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "player_id",
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.item_types": {
+      "name": "item_types",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "byDefault",
+            "name": "item_types_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "kind": {
+          "name": "kind",
+          "type": "item_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size": {
+          "name": "size",
+          "type": "item_size",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "base_value": {
+          "name": "base_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "animal_id": {
+          "name": "animal_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "diagnostic": {
+          "name": "diagnostic",
+          "type": "diagnostic_tier",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bone_type": {
+          "name": "bone_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "item_types_animal_id_animals_id_fk": {
+          "name": "item_types_animal_id_animals_id_fk",
+          "tableFrom": "item_types",
+          "tableTo": "animals",
+          "columnsFrom": [
+            "animal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "item_types_base_value_nonneg": {
+          "name": "item_types_base_value_nonneg",
+          "value": "\"item_types\".\"base_value\" >= 0"
+        },
+        "item_types_fossil_fields": {
+          "name": "item_types_fossil_fields",
+          "value": "(\"item_types\".\"kind\" = 'fossil' and \"item_types\".\"animal_id\" is not null and \"item_types\".\"diagnostic\" is not null)\n        or (\"item_types\".\"kind\" <> 'fossil' and \"item_types\".\"animal_id\" is null and \"item_types\".\"diagnostic\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.players": {
+      "name": "players",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "balance": {
+          "name": "balance",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 100
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_score": {
+          "name": "final_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "players_balance_nonneg": {
+          "name": "players_balance_nonneg",
+          "value": "\"players\".\"balance\" >= 0"
+        },
+        "players_name_length": {
+          "name": "players_name_length",
+          "value": "char_length(\"players\".\"name\") between 1 and 40"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.site_spawns": {
+      "name": "site_spawns",
+      "schema": "",
+      "columns": {
+        "site_id": {
+          "name": "site_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "item_type_id": {
+          "name": "item_type_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weight": {
+          "name": "weight",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "site_spawns_site_id_dig_sites_id_fk": {
+          "name": "site_spawns_site_id_dig_sites_id_fk",
+          "tableFrom": "site_spawns",
+          "tableTo": "dig_sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "site_spawns_item_type_id_item_types_id_fk": {
+          "name": "site_spawns_item_type_id_item_types_id_fk",
+          "tableFrom": "site_spawns",
+          "tableTo": "item_types",
+          "columnsFrom": [
+            "item_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "site_spawns_site_id_item_type_id_pk": {
+          "name": "site_spawns_site_id_item_type_id_pk",
+          "columns": [
+            "site_id",
+            "item_type_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "site_spawns_weight_positive": {
+          "name": "site_spawns_weight_positive",
+          "value": "\"site_spawns\".\"weight\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.specimens": {
+      "name": "specimens",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "specimens_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "item_type_id": {
+          "name": "item_type_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "specimen_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'owned'"
+        },
+        "taxon_id": {
+          "name": "taxon_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "found_site_id": {
+          "name": "found_site_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "found_at": {
+          "name": "found_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "sold_at": {
+          "name": "sold_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "specimens_player_idx": {
+          "name": "specimens_player_idx",
+          "columns": [
+            {
+              "expression": "player_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "specimens_taxon_idx": {
+          "name": "specimens_taxon_idx",
+          "columns": [
+            {
+              "expression": "taxon_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "specimens_player_id_players_id_fk": {
+          "name": "specimens_player_id_players_id_fk",
+          "tableFrom": "specimens",
+          "tableTo": "players",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "specimens_item_type_id_item_types_id_fk": {
+          "name": "specimens_item_type_id_item_types_id_fk",
+          "tableFrom": "specimens",
+          "tableTo": "item_types",
+          "columnsFrom": [
+            "item_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "specimens_taxon_id_taxa_id_fk": {
+          "name": "specimens_taxon_id_taxa_id_fk",
+          "tableFrom": "specimens",
+          "tableTo": "taxa",
+          "columnsFrom": [
+            "taxon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "specimens_found_site_id_dig_sites_id_fk": {
+          "name": "specimens_found_site_id_dig_sites_id_fk",
+          "tableFrom": "specimens",
+          "tableTo": "dig_sites",
+          "columnsFrom": [
+            "found_site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "specimens_sold_not_named": {
+          "name": "specimens_sold_not_named",
+          "value": "\"specimens\".\"status\" <> 'sold' or \"specimens\".\"taxon_id\" is null"
+        },
+        "specimens_sold_at_matches": {
+          "name": "specimens_sold_at_matches",
+          "value": "(\"specimens\".\"status\" = 'sold') = (\"specimens\".\"sold_at\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.taxa": {
+      "name": "taxa",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "taxa_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "genus_id": {
+          "name": "genus_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "species_name": {
+          "name": "species_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "taxa_genus_id_genera_id_fk": {
+          "name": "taxa_genus_id_genera_id_fk",
+          "tableFrom": "taxa",
+          "tableTo": "genera",
+          "columnsFrom": [
+            "genus_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "taxa_genus_species_unique": {
+          "name": "taxa_genus_species_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "genus_id",
+            "species_name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.diagnostic_tier": {
+      "name": "diagnostic_tier",
+      "schema": "public",
+      "values": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "public.item_kind": {
+      "name": "item_kind",
+      "schema": "public",
+      "values": [
+        "fossil",
+        "rock",
+        "gem"
+      ]
+    },
+    "public.item_size": {
+      "name": "item_size",
+      "schema": "public",
+      "values": [
+        "small",
+        "medium",
+        "large"
+      ]
+    },
+    "public.specimen_status": {
+      "name": "specimen_status",
+      "schema": "public",
+      "values": [
+        "owned",
+        "sold"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

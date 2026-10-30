@@ -54,8 +54,14 @@ export class InventoryScene extends Phaser.Scene {
   private nameButton!: Phaser.GameObjects.Rectangle;
   private nameLabel!: Phaser.GameObjects.Text;
 
+  private returnTo = 'SiteSelectScene'; // the scene that opened this one
+
   constructor() {
     super('InventoryScene');
+  }
+
+  init(data: { from?: string }) {
+    this.returnTo = data.from ?? 'SiteSelectScene';
   }
 
   create() {
@@ -72,7 +78,7 @@ export class InventoryScene extends Phaser.Scene {
     this.events.once('shutdown', () => this.closeDialog());
 
     this.headerText = this.add.text(20, 16, '', { fontSize: '20px', color: '#f2e8cf' });
-    this.makeButton(width - 100, 30, 160, 40, 'Back to dig', () => this.scene.start('DigScene'));
+    this.makeButton(width - 100, 30, 160, 40, 'Back', () => this.scene.start(this.returnTo));
 
     // Leaves room on the right for the Name and Sell buttons.
     this.detailText = this.add.text(20, 428, '', {
@@ -268,12 +274,13 @@ export class InventoryScene extends Phaser.Scene {
     if (!specimen) {
       this.detailText.setText('');
     } else {
-      const { item, name } = specimen;
+      const { item, name, site } = specimen;
+      const found = site ? `  |  Found at ${site.name}` : '';
       const named = name
         ? `\nNamed: ${name.genus} ${name.species}${name.isHolotype ? ` (holotype of ${name.genus})` : ''}`
         : '';
       this.detailText.setText(
-        `${item.name}  (${item.kind}, ${item.size})\n${item.description}\nWorth ${item.baseValue}${named}`,
+        `${item.name}  (${item.kind}, ${item.size})\n${item.description}\nWorth ${item.baseValue}${found}${named}`,
       );
     }
     this.updateSellButton();

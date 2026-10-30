@@ -16,6 +16,7 @@ export interface DigSite {
   id: number;
   name: string;
   description: string;
+  image: string;
   digCost: number;
 }
 
@@ -113,10 +114,17 @@ export async function fetchSites(): Promise<DigSite[]> {
   return data.sites;
 }
 
-export function dig(playerId: string): Promise<DigResult> {
+export function dig(playerId: string, siteId: number): Promise<DigResult> {
   return request<DigResult>(`/api/players/${encodeURIComponent(playerId)}/dig`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ siteId }),
   });
+}
+
+/** Dig site backgrounds are static files served by the client from public/images/sites/. */
+export function siteImageUrl(image: string): string {
+  return `${import.meta.env.BASE_URL}images/sites/${encodeURIComponent(image)}`;
 }
 
 /* -------------------------------- inventory ------------------------------- */
@@ -134,6 +142,8 @@ export interface Specimen {
   foundAt: string;
   item: DugItem;
   name: SpecimenName | null;
+  /** Where it was dug up; null for finds made before sites were tracked. */
+  site: { id: number; name: string } | null;
 }
 
 export function fetchInventory(playerId: string): Promise<{ player: Player; specimens: Specimen[] }> {
@@ -196,7 +206,7 @@ export function unnameSpecimen(
 export interface DiscoveredSpecies {
   id: number;
   name: string;
-  specimens: { id: number; itemName: string }[];
+  specimens: { id: number; itemName: string; siteName: string | null }[];
 }
 
 export interface DiscoveredGenus {
