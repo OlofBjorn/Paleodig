@@ -77,7 +77,7 @@ export class NameScene extends Phaser.Scene {
       const player = await createPlayer(name);
       storePlayerId(player.id);
       this.registry.set('player', player);
-      this.scene.start('DigScene');
+      this.scene.start('SiteSelectScene');
     } catch (err) {
       this.message.setText(`Could not create a session.\n${String(err)}`);
       this.busy = false;

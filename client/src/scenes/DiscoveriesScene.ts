@@ -27,8 +27,14 @@ export class DiscoveriesScene extends Phaser.Scene {
   private summaryText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
 
+  private returnTo = 'SiteSelectScene'; // the scene that opened this one
+
   constructor() {
     super('DiscoveriesScene');
+  }
+
+  init(data: { from?: string }) {
+    this.returnTo = data.from ?? 'SiteSelectScene';
   }
 
   create() {
@@ -42,9 +48,9 @@ export class DiscoveriesScene extends Phaser.Scene {
       .rectangle(width - 100, 30, 160, 40, 0xc8963e)
       .setInteractive({ useHandCursor: true });
     this.add
-      .text(back.x, back.y, 'Back to dig', { fontSize: '20px', color: '#2b1d14' })
+      .text(back.x, back.y, 'Back', { fontSize: '20px', color: '#2b1d14' })
       .setOrigin(0.5);
-    back.on('pointerdown', () => this.scene.start('DigScene'));
+    back.on('pointerdown', () => this.scene.start(this.returnTo));
 
     this.statusText = this.add
       .text(width / 2, height / 2, 'Loading your discoveries...', {
@@ -134,15 +140,20 @@ export class DiscoveriesScene extends Phaser.Scene {
       block.appendChild(this.el('div', 'No species currently.', 'margin-top: 6px; opacity: 0.7;'));
     }
     for (const species of genus.species) {
-      const names = species.specimens.map((s) => s.itemName).join(', ');
-      const count = species.specimens.length;
       block.appendChild(
         this.el(
           'div',
-          `${genus.name} ${species.name} (${count}): ${names}`,
-          'margin: 6px 0 0 16px;',
+          `${genus.name} ${species.name} (${species.specimens.length})`,
+          'margin: 8px 0 0 16px;',
         ),
       );
+      // Each specimen with where it was found: location is the player's main clue.
+      for (const specimen of species.specimens) {
+        const where = specimen.siteName ? `  -  ${specimen.siteName}` : '';
+        block.appendChild(
+          this.el('div', `${specimen.itemName}${where}`, 'margin-left: 36px; opacity: 0.85;'),
+        );
+      }
     }
 
     return block;

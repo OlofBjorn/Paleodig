@@ -5,6 +5,7 @@ import { DigScene } from './scenes/digScene';
 import { DiscoveriesScene } from './scenes/DiscoveriesScene';
 import { InventoryScene } from './scenes/InventoryScene';
 import { NameScene } from './scenes/NameScene';
+import { SiteSelectScene } from './scenes/SiteSelectScene';
 
 new Phaser.Game({
   type: Phaser.AUTO,
@@ -13,7 +14,7 @@ new Phaser.Game({
   height: 600,
   backgroundColor: '#3b2f2a',
   dom: { createContainer: true }, // needed for the name <input>
-  scene: [BootScene, NameScene, DigScene, InventoryScene, DiscoveriesScene],
+  scene: [BootScene, NameScene, SiteSelectScene, DigScene, InventoryScene, DiscoveriesScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
