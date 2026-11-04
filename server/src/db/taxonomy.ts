@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from './index'; // adjust if your db export is named differently
-import { genera, specimens, taxa } from './schema';
+import { db } from './index.js';
+import { genera, specimens, taxa } from './schema.js';
 
 /**
  * A genus is valid exactly when its holotype specimen currently belongs

@@ -1,10 +1,10 @@
 import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
-import { db } from '../db/index'; // adjust if your db export is named differently
-import { genera, itemTypes, players, specimens, taxa } from '../db/schema';
-import { normalizeGenus, normalizeSpecies } from '../game/naming';
-import { HttpError } from '../lib/httpError';
-import { isUuid } from '../lib/uuid';
+import { db } from '../db/index.js';
+import { genera, itemTypes, players, specimens, taxa } from '../db/schema.js';
+import { normalizeGenus, normalizeSpecies } from '../game/naming.js';
+import { HttpError } from '../lib/httpError.js';
+import { isUuid } from '../lib/uuid.js';
 
 const MAX_INT4 = 2147483647; // specimens.id is a Postgres integer
 

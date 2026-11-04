@@ -1,4 +1,4 @@
-import { itemTypes } from '../db/schema';
+import { itemTypes } from '../db/schema.js';
 
 /**
  * The only item columns the client ever sees. animalId and diagnostic are the hidden

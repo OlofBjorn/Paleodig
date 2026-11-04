@@ -1,8 +1,8 @@
 import { and, asc, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
-import { db } from '../db/index'; // adjust if your db export is named differently
-import { digSites, genera, itemTypes, players, specimens, taxa } from '../db/schema';
-import { isUuid } from '../lib/uuid';
+import { db } from '../db/index.js';
+import { digSites, genera, itemTypes, players, specimens, taxa } from '../db/schema.js';
+import { isUuid } from '../lib/uuid.js';
 
 type SpeciesEntry = {
   id: number;
