@@ -1,12 +1,12 @@
 import cors from '@fastify/cors';
 import { sql } from 'drizzle-orm';
 import Fastify from 'fastify';
-import { db } from './db/index'; // adjust if your db export is named differently
-import { digRoutes } from './routes/dig';
-import { discoveryRoutes } from './routes/discoveries';
-import { namingRoutes } from './routes/naming';
-import { playerRoutes } from './routes/players';
-import { specimenRoutes } from './routes/specimens';
+import { db } from './db/index.js';
+import { digRoutes } from './routes/dig.js';
+import { discoveryRoutes } from './routes/discoveries.js';
+import { namingRoutes } from './routes/naming.js';
+import { playerRoutes } from './routes/players.js';
+import { specimenRoutes } from './routes/specimens.js';
 
 const app = Fastify({ logger: true });
 
@@ -23,7 +23,11 @@ app.get('/api/health', async (_req, reply) => {
 
 async function start() {
   await app.register(cors, {
-    origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
+    origin: [
+      'https://paleodig-wkvi.vercel.app',
+      'http://localhost:5173',
+      ...(process.env.CLIENT_ORIGIN ? [process.env.CLIENT_ORIGIN] : []),
+    ],
     methods: ['GET', 'HEAD', 'POST', 'DELETE'], // the default only allows GET, HEAD and POST
   });
 

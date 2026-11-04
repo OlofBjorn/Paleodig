@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
-import { db } from './index'; // adjust if your db export is named differently
-import { animals, digSites, itemTypes, siteSpawns } from './schema';
+import { db } from './index.js';
+import { animals, digSites, itemTypes, siteSpawns } from './schema.js';
 
 /**
  * Placeholder seed data. Each item's image is <slug of its name>.png; until that file exists
