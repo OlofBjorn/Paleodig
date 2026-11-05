@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
-import { ApiError, clearStoredPlayerId, dig, type DigSite, type Player } from '../api';
+import { ApiError, clearStoredPlayerId, dig, isGameEnded, type DigSite, type Player } from '../api';
+import type { ConfirmDialog } from '../ui/ConfirmDialog';
+import { openEndGameDialog } from '../ui/endgameDialog';
 import { siteTextureKey } from '../ui/loadTextures';
 
 // A dark outline keeps text readable on top of any background image.
@@ -13,6 +15,7 @@ export class DigScene extends Phaser.Scene {
   private headerText!: Phaser.GameObjects.Text;
   private resultText!: Phaser.GameObjects.Text;
   private busy = false;
+  private dialog: ConfirmDialog | null = null;
 
   constructor() {
     super('DigScene');
@@ -27,6 +30,8 @@ export class DigScene extends Phaser.Scene {
     const { width, height } = this.scale;
     this.busy = false;
     this.player = this.registry.get('player') as Player;
+    this.dialog = null;
+    this.events.once('shutdown', () => this.closeDialog());
 
     // The site list is loaded by the select screen. If it isn't there, go back and get it.
     const sites = (this.registry.get('sites') as DigSite[] | undefined) ?? [];
@@ -57,6 +62,10 @@ export class DigScene extends Phaser.Scene {
       this.scene.start('DiscoveriesScene', { from: 'DigScene' }),
     );
 
+    this.makeButton(100, 568, 160, 36, 'End game', () => {
+      if (!this.dialog) this.dialog = openEndGameDialog(this, () => this.closeDialog());
+    });
+
     this.add.text(width / 2, 100, site.name, { fontSize: '38px', ...TEXT }).setOrigin(0.5);
 
     this.resultText = this.add
@@ -78,6 +87,11 @@ export class DigScene extends Phaser.Scene {
       .text(button.x, button.y + 50, `Costs ${site.digCost} per dig`, { fontSize: '18px', ...TEXT })
       .setOrigin(0.5);
     button.on('pointerdown', () => void this.onDig());
+  }
+
+  private closeDialog() {
+    this.dialog?.destroy();
+    this.dialog = null;
   }
 
   private makeButton(x: number, y: number, w: number, h: number, label: string, onClick: () => void) {
@@ -108,6 +122,11 @@ export class DigScene extends Phaser.Scene {
         `${item.name}\n(${item.kind}, ${item.size})\n\n${item.description}\n\nWorth ${item.baseValue}`,
       );
     } catch (err) {
+      if (isGameEnded(err)) {
+        // The game was ended elsewhere (for example in another tab): show the results.
+        this.scene.start('BootScene');
+        return;
+      }
       if (err instanceof ApiError && err.status === 402) {
         this.resultText.setText('Not enough money to dig.');
       } else if (err instanceof ApiError && err.status === 404 && /site/i.test(err.message)) {

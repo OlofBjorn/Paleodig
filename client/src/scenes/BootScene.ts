@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { clearStoredPlayerId, fetchPlayer, getStoredPlayerId } from '../api';
+import { clearStoredPlayerId, fetchPlayer, fetchReport, getStoredPlayerId } from '../api';
 
 /** First scene: resume a saved session if the server still knows it, otherwise ask for a name. */
 export class BootScene extends Phaser.Scene {
@@ -32,7 +32,15 @@ export class BootScene extends Phaser.Scene {
       const player = await fetchPlayer(storedId);
       if (player) {
         this.registry.set('player', player);
-        this.scene.start('SiteSelectScene');
+        if (player.ended) {
+          // A finished game goes straight back to its results.
+          const result = await fetchReport(player.id);
+          if (!this.scene.isActive()) return;
+          this.registry.set('report', result.report);
+          this.scene.start('EndScene');
+        } else {
+          this.scene.start('SiteSelectScene');
+        }
       } else {
         // The server doesn't know this id (e.g. the database was reset): start fresh.
         clearStoredPlayerId();

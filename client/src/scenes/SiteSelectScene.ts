@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { fetchSites, siteImageUrl, type DigSite, type Player } from '../api';
+import type { ConfirmDialog } from '../ui/ConfirmDialog';
+import { openEndGameDialog } from '../ui/endgameDialog';
 import { loadTextures, siteTextureKey } from '../ui/loadTextures';
 
 const CARD_W = 240;
@@ -16,6 +18,7 @@ const FALLBACK_COLORS = [0x8a5a3c, 0x4f6d7a, 0xc2a35a];
 export class SiteSelectScene extends Phaser.Scene {
   private player!: Player;
   private statusText!: Phaser.GameObjects.Text;
+  private dialog: ConfirmDialog | null = null;
 
   constructor() {
     super('SiteSelectScene');
@@ -24,6 +27,8 @@ export class SiteSelectScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
     this.player = this.registry.get('player') as Player;
+    this.dialog = null;
+    this.events.once('shutdown', () => this.closeDialog());
 
     this.add.text(20, 16, `${this.player.name}  |  Balance: ${this.player.balance}`, {
       fontSize: '20px',
@@ -40,6 +45,10 @@ export class SiteSelectScene extends Phaser.Scene {
       this.scene.start('DiscoveriesScene', { from: 'SiteSelectScene' }),
     );
 
+    this.makeButton(width / 2, 568, 200, 38, 'End game', () => {
+      if (!this.dialog) this.dialog = openEndGameDialog(this, () => this.closeDialog());
+    });
+
     this.statusText = this.add
       .text(width / 2, height / 2, 'Loading dig sites...', {
         fontSize: '22px',
@@ -50,6 +59,11 @@ export class SiteSelectScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     void this.loadSites();
+  }
+
+  private closeDialog() {
+    this.dialog?.destroy();
+    this.dialog = null;
   }
 
   private makeButton(x: number, y: number, w: number, h: number, label: string, onClick: () => void) {

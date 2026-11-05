@@ -3,6 +3,7 @@ import {
   ApiError,
   clearStoredPlayerId,
   fetchInventory,
+  isGameEnded,
   itemImageUrl,
   nameSpecimen,
   sellSpecimen,
@@ -363,6 +364,11 @@ export class InventoryScene extends Phaser.Scene {
   /** Turns a failed request into the text shown inside the dialog (null = nothing to show). */
   private dialogError(err: unknown): string | null {
     if (!this.scene.isActive()) return null;
+    if (isGameEnded(err)) {
+      this.closeDialog();
+      this.scene.start('BootScene'); // the game was ended elsewhere: show the results
+      return null;
+    }
     if (err instanceof ApiError) {
       if (err.status === 404) {
         // The specimen or player vanished: close and refresh from the server.
@@ -425,6 +431,10 @@ export class InventoryScene extends Phaser.Scene {
       this.noticeText.setText(`Sold ${specimen.item.name} for ${result.earned}.${invalidated}`);
     } catch (err) {
       if (!this.scene.isActive()) return;
+      if (isGameEnded(err)) {
+        this.scene.start('BootScene'); // the game was ended elsewhere: show the results
+        return;
+      }
       if (err instanceof ApiError && (err.status === 404 || err.status === 409)) {
         // Our list was out of date (for example it was sold in another tab): refresh it.
         this.noticeText.setText(err.message);
