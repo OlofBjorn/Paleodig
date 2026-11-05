@@ -10,6 +10,8 @@ export interface Player {
   id: string;
   name: string;
   balance: number;
+  /** True once the game has been ended and scored. */
+  ended: boolean;
 }
 
 export interface DigSite {

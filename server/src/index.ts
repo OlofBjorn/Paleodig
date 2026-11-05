@@ -4,6 +4,7 @@ import Fastify from 'fastify';
 import { db } from './db/index'; // adjust if your db export is named differently
 import { digRoutes } from './routes/dig';
 import { discoveryRoutes } from './routes/discoveries';
+import { endgameRoutes } from './routes/endgame';
 import { namingRoutes } from './routes/naming';
 import { playerRoutes } from './routes/players';
 import { specimenRoutes } from './routes/specimens';
@@ -32,6 +33,7 @@ async function start() {
   await app.register(specimenRoutes);
   await app.register(namingRoutes);
   await app.register(discoveryRoutes);
+  await app.register(endgameRoutes);
 
   const port = Number(process.env.PORT ?? 3000);
   try {
