@@ -183,7 +183,7 @@ export class NamingDialog {
     this.busy = false;
     if (!this.destroyed && error) this.errorText.setText(error);
   }
-
+ 
   private async remove() {
     if (this.busy || this.destroyed || !this.handlers.onRemove) return;
 
