@@ -1,10 +1,10 @@
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
-import { db } from '../db/index'; // adjust if your db export is named differently
-import { animals, genera, itemTypes, players, specimens, taxa } from '../db/schema';
-import { scoreGame, type ScoreReport, type ScoringInput } from '../game/scoring';
-import { HttpError } from '../lib/httpError';
-import { isUuid } from '../lib/uuid';
+import { db } from '../db/index.js';
+import { animals, genera, itemTypes, players, specimens, taxa } from '../db/schema.js';
+import { scoreGame, type ScoreReport, type ScoringInput } from '../game/scoring.js';
+import { HttpError } from '../lib/httpError.js';
+import { isUuid } from '../lib/uuid.js';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 

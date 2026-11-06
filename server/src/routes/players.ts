@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
-import { db } from '../db/index'; // adjust if your db export is named differently
-import { players } from '../db/schema';
-import { playerFields, toPlayer } from '../lib/player';
-import { isUuid } from '../lib/uuid';
+import { db } from '../db/index.js';
+import { players } from '../db/schema.js';
+import { playerFields, toPlayer } from '../lib/player.js';
+import { isUuid } from '../lib/uuid.js';
 
 const MAX_NAME_LENGTH = 40;
 

@@ -1,10 +1,10 @@
 import { and, asc, eq, gte, isNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
-import { db } from '../db/index'; // adjust if your db export is named differently
-import { digSites, itemTypes, players, siteSpawns, specimens } from '../db/schema';
-import { pickWeighted } from '../game/weightedPick';
-import { publicItemFields } from '../lib/publicFields';
-import { isUuid } from '../lib/uuid';
+import { db } from '../db/index.js';
+import { digSites, itemTypes, players, siteSpawns, specimens } from '../db/schema.js';
+import { pickWeighted } from '../game/weightedPick.js';
+import { publicItemFields } from '../lib/publicFields.js';
+import { isUuid } from '../lib/uuid.js';
 
 export async function digRoutes(app: FastifyInstance) {
   /** Lists dig sites so the client can show the cost. */

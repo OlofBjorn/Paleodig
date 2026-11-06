@@ -1,4 +1,4 @@
-import { players } from '../db/schema';
+import { players } from '../db/schema.js';
 
 /** The only player fields the client ever needs. */
 export const playerFields = {

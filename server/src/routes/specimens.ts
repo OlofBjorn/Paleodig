@@ -1,11 +1,11 @@
 import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
-import { db } from '../db/index'; // adjust if your db export is named differently
-import { digSites, genera, itemTypes, players, specimens, taxa } from '../db/schema';
-import { HttpError } from '../lib/httpError';
-import { playerFields, toPlayer } from '../lib/player';
-import { publicItemFields } from '../lib/publicFields';
-import { isUuid } from '../lib/uuid';
+import { db } from '../db/index.js';
+import { digSites, genera, itemTypes, players, specimens, taxa } from '../db/schema.js';
+import { HttpError } from '../lib/httpError.js';
+import { playerFields, toPlayer } from '../lib/player.js';
+import { publicItemFields } from '../lib/publicFields.js';
+import { isUuid } from '../lib/uuid.js';
 
 const MAX_INT4 = 2147483647; // specimens.id is a Postgres integer
 
