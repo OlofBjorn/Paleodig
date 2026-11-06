@@ -24,25 +24,25 @@ app.get('/api/health', async (_req, reply) => {
 
 async function start() {
   await app.register(cors, {
-  origin: (origin, callback) => {
-    const allowed = new Set([
-      'http://localhost:5173',
-      'http://localhost:4173',
-      'https://paleodig.vercel.app',
-      'https://paleodig-wkvi.vercel.app',
-      'https://paleodig-wkvi-jq09zb64o-olof-bjorns-projects.vercel.app',
-    ]);
+    origin: (origin, callback) => {
+      const allowed = new Set([
+        'http://localhost:5173',
+        'http://localhost:4173',
+        'https://paleodig.vercel.app',
+        'https://paleodig-wkvi.vercel.app',
+        'https://paleodig-wkvi-jq09zb64o-olof-bjorns-projects.vercel.app',
+      ]);
 
-    if (!origin || allowed.has(origin) || /https:\/\/.*\.vercel\.app$/.test(origin)) {
-      callback(null, true);
-      return;
-    }
+      if (!origin || allowed.has(origin) || /https:\/\/.*\.vercel\.app$/.test(origin)) {
+        callback(null, true);
+        return;
+      }
 
-    callback(new Error('Not allowed by CORS'), false);
-  },
-  methods: ['GET', 'HEAD', 'POST', 'DELETE'],
-  credentials: true,
-});
+      callback(new Error('Not allowed by CORS'), false);
+    },
+    methods: ['GET', 'HEAD', 'POST', 'DELETE'],
+    credentials: true,
+  });
 
   await app.register(playerRoutes);
   await app.register(digRoutes);
