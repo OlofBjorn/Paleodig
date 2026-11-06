@@ -24,8 +24,23 @@ app.get('/api/health', async (_req, reply) => {
 
 async function start() {
   await app.register(cors, {
-    origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
-    methods: ['GET', 'HEAD', 'POST', 'DELETE'], // the default only allows GET, HEAD and POST
+    origin: (origin, callback) => {
+      const allowed = new Set([
+        'http://localhost:5173',
+        'http://localhost:4173',
+        'https://paleodig.vercel.app',
+        'https://paleodig-wkvi.vercel.app',
+      ]);
+
+      if (!origin || allowed.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error('Not allowed by CORS'), false);
+    },
+    methods: ['GET', 'HEAD', 'POST', 'DELETE'],
+    credentials: true,
   });
 
   await app.register(playerRoutes);
