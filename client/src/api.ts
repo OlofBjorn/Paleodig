@@ -10,6 +10,8 @@ export interface Player {
   id: string;
   name: string;
   balance: number;
+  /** True once the game has been ended and scored. */
+  ended: boolean;
 }
 
 export interface DigSite {
@@ -225,4 +227,101 @@ export interface Discoveries {
 
 export function fetchDiscoveries(playerId: string): Promise<Discoveries> {
   return request(`/api/players/${encodeURIComponent(playerId)}/discoveries`);
+}
+
+/* -------------------------------- end game -------------------------------- */
+
+// These mirror the report built by the server's scoring service.
+
+export type Tier = 'high' | 'medium' | 'low';
+
+export interface ReportAnimal {
+  id: number;
+  genus: string;
+  species: string;
+}
+
+export interface NameRef {
+  taxonId: number;
+  genus: string;
+  species: string;
+}
+
+export interface SpeciesResult extends NameRef {
+  genusId: number;
+  genusValid: boolean;
+  verdict: 'correct' | 'dubious' | 'wrong_merge';
+  hasDiagnostic: boolean;
+  specimens: {
+    id: number;
+    itemName: string;
+    diagnostic: Tier;
+    animal: ReportAnimal;
+    credit: number;
+  }[];
+  animals: ReportAnimal[];
+  synonymOf: (NameRef & { sameGenus: boolean }) | null;
+  points: number;
+}
+
+export interface SynonymResult {
+  junior: NameRef;
+  senior: NameRef;
+  animal: ReportAnimal;
+  sameGenus: boolean;
+}
+
+export interface GenusResult {
+  genusId: number;
+  name: string;
+  status: 'credited' | 'wasted' | 'invalid';
+  points: number;
+  reason: 'synonyms' | 'unconfirmed' | null;
+}
+
+export interface LostFossil {
+  specimenId: number;
+  itemName: string;
+  diagnostic: Tier;
+  animal: ReportAnimal;
+  penalty: number;
+}
+
+export interface ScoreReport {
+  score: number;
+  money: number;
+  breakdown: {
+    specimenCredit: number;
+    speciesPoints: number;
+    genusPoints: number;
+    moneyPoints: number;
+    soldPenalty: number;
+    wrongMergePenalty: number;
+    duplicatePenalty: number;
+  };
+  species: SpeciesResult[];
+  genera: GenusResult[];
+  synonyms: SynonymResult[];
+  lostFossils: LostFossil[];
+  unnamedFossils: { specimenId: number; itemName: string; animal: ReportAnimal }[];
+}
+
+export interface EndResult {
+  player: { id: string; name: string; balance: number; ended: boolean; finalScore: number | null };
+  report: ScoreReport;
+}
+
+/** Ends and scores the game. Safe to call again: an ended game returns the same report. */
+export function endGame(playerId: string): Promise<EndResult> {
+  return request(`/api/players/${encodeURIComponent(playerId)}/end`, { method: 'POST' });
+}
+
+/** The report for a game that has already ended. The server refuses it while a game is running. */
+export function fetchReport(playerId: string): Promise<EndResult> {
+  return request(`/api/players/${encodeURIComponent(playerId)}/report`);
+}
+
+/** True when the server rejected a request because the game is over. */
+export function isGameEnded(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 409 && /already ended/i.test(err.message);
 }

@@ -2,16 +2,10 @@ import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { db } from '../db/index.js';
 import { players } from '../db/schema.js';
+import { playerFields, toPlayer } from '../lib/player.js';
 import { isUuid } from '../lib/uuid.js';
 
 const MAX_NAME_LENGTH = 40;
-
-// The only player fields the client ever needs.
-const playerFields = {
-  id: players.id,
-  name: players.name,
-  balance: players.balance,
-};
 
 export async function playerRoutes(app: FastifyInstance) {
   /** Start a new game session. The returned id is what the client keeps in localStorage. */
@@ -28,7 +22,7 @@ export async function playerRoutes(app: FastifyInstance) {
     }
 
     const [player] = await db.insert(players).values({ name }).returning(playerFields);
-    return reply.code(201).send({ player });
+    return reply.code(201).send({ player: toPlayer(player) });
   });
 
   /** Lets the client check that a stored id still exists, and refresh name and balance. */
@@ -44,6 +38,6 @@ export async function playerRoutes(app: FastifyInstance) {
     if (!player) {
       return reply.code(404).send({ error: 'Player not found.' });
     }
-    return { player };
+    return { player: toPlayer(player) };
   });
 }

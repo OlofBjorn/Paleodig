@@ -185,6 +185,15 @@ export async function namingRoutes(app: FastifyInstance) {
 
       try {
         const result = await db.transaction(async (tx) => {
+          // Same lock and check as naming: a finished game is frozen.
+          const [player] = await tx
+            .select({ endedAt: players.endedAt })
+            .from(players)
+            .where(eq(players.id, id))
+            .for('update');
+          if (!player) throw new HttpError(404, 'Player not found.');
+          if (player.endedAt) throw new HttpError(409, 'This game has already ended.');
+
           const [specimen] = await tx
             .select({ id: specimens.id, status: specimens.status, taxonId: specimens.taxonId })
             .from(specimens)

@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { db } from '../db/index.js';
 import { digSites, genera, itemTypes, players, specimens, taxa } from '../db/schema.js';
 import { HttpError } from '../lib/httpError.js';
+import { playerFields, toPlayer } from '../lib/player.js';
 import { publicItemFields } from '../lib/publicFields.js';
 import { isUuid } from '../lib/uuid.js';
 
@@ -17,7 +18,7 @@ export async function specimenRoutes(app: FastifyInstance) {
     }
 
     const [player] = await db
-      .select({ id: players.id, name: players.name, balance: players.balance })
+      .select(playerFields)
       .from(players)
       .where(eq(players.id, id));
     if (!player) {
@@ -53,7 +54,7 @@ export async function specimenRoutes(app: FastifyInstance) {
       site: siteId !== null && siteName !== null ? { id: siteId, name: siteName } : null,
     }));
 
-    return { player, specimens: owned };
+    return { player: toPlayer(player), specimens: owned };
   });
 
   /**

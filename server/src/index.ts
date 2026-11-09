@@ -4,6 +4,7 @@ import Fastify from 'fastify';
 import { db } from './db/index.js';
 import { digRoutes } from './routes/dig.js';
 import { discoveryRoutes } from './routes/discoveries.js';
+import { endgameRoutes } from './routes/endgame.js';
 import { namingRoutes } from './routes/naming.js';
 import { playerRoutes } from './routes/players.js';
 import { specimenRoutes } from './routes/specimens.js';
@@ -23,12 +24,23 @@ app.get('/api/health', async (_req, reply) => {
 
 async function start() {
   await app.register(cors, {
-    origin: [
-      'https://paleodig-wkvi.vercel.app',
-      'http://localhost:5173',
-      ...(process.env.CLIENT_ORIGIN ? [process.env.CLIENT_ORIGIN] : []),
-    ],
-    methods: ['GET', 'HEAD', 'POST', 'DELETE'], // the default only allows GET, HEAD and POST
+    origin: (origin, callback) => {
+      const allowed = new Set([
+        'http://localhost:5173',
+        'http://localhost:4173',
+        'https://paleodig.vercel.app',
+        'https://paleodig-wkvi.vercel.app',
+      ]);
+
+      if (!origin || allowed.has(origin) || /https:\/\/.*\.vercel\.app$/.test(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error('Not allowed by CORS'), false);
+    },
+    methods: ['GET', 'HEAD', 'POST', 'DELETE'],
+    credentials: true,
   });
 
   await app.register(playerRoutes);
@@ -36,6 +48,7 @@ async function start() {
   await app.register(specimenRoutes);
   await app.register(namingRoutes);
   await app.register(discoveryRoutes);
+  await app.register(endgameRoutes);
 
   const port = Number(process.env.PORT ?? 3000);
   try {
