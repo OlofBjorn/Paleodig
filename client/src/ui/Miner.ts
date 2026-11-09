@@ -15,6 +15,9 @@ const IDLE_ANGLE = -55; // leaning back over the shoulder (0 = straight up, cloc
 const STRIKE_ANGLE = 140; // down and forward into the ground
 const SWING_MS = 240;
 
+const WALK_BOUNCE = 5; // how high each step lifts him
+const WALK_STEP_MS = 120;
+
 /** Starts loading the miner's art. A missing file is fine: shapes are drawn instead. */
 export function preloadMinerTextures(scene: Phaser.Scene) {
   if (!scene.textures.exists(BODY_KEY)) scene.load.image(BODY_KEY, imageUrl('miner.png'));
@@ -22,18 +25,22 @@ export function preloadMinerTextures(scene: Phaser.Scene) {
 }
 
 /**
- * A little miner standing at (x, y), facing right, who swings a pickaxe while mining.
+ * A little miner who walks around and swings a pickaxe. Drawn facing right and mirrored when he
+ * faces left, so one set of art covers both directions.
  *
  * Uses the images in public/images/miner/ when they exist, and plain coloured shapes otherwise,
  * so the animation can be built and tested before any art is drawn.
  */
 export class Miner {
   private scene: Phaser.Scene;
-  private root: Phaser.GameObjects.Container;
-  private body: Phaser.GameObjects.Container;
+  private root: Phaser.GameObjects.Container; // position and facing live here
+  private rig: Phaser.GameObjects.Container; // bounces while walking
+  private body: Phaser.GameObjects.Container; // squashes while mining
   private pickaxe: Phaser.GameObjects.Container;
+  private facing: 1 | -1 = 1;
   private swing: Phaser.Tweens.Tween | null = null;
   private bob: Phaser.Tweens.Tween | null = null;
+  private walk: Phaser.Tweens.Tween | null = null;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.scene = scene;
@@ -70,15 +77,54 @@ export class Miner {
     }
     this.pickaxe.setAngle(IDLE_ANGLE);
 
-    this.root = scene.add.container(x, y, [this.body, this.pickaxe]);
+    this.rig = scene.add.container(0, 0, [this.body, this.pickaxe]);
+    this.root = scene.add.container(x, y, [this.rig]);
   }
 
-  /** Where the pickaxe hits the ground: the spot a found item should spring up from. */
+  /** The miner's feet. */
+  get position(): { x: number; y: number } {
+    return { x: this.root.x, y: this.root.y };
+  }
+
+  get facingDirection(): 1 | -1 {
+    return this.facing;
+  }
+
+  moveTo(x: number, y: number) {
+    this.root.setPosition(x, y);
+  }
+
+  /** 1 faces right, -1 faces left (the whole miner is mirrored, pickaxe included). */
+  setFacing(direction: 1 | -1) {
+    this.facing = direction;
+    this.root.setScale(direction, 1);
+  }
+
+  /** Where the pickaxe hits the ground, in front of him: the spot a found item springs up from. */
   get strikePoint(): { x: number; y: number } {
-    return { x: this.root.x + REACH, y: this.root.y };
+    return { x: this.root.x + REACH * this.facing, y: this.root.y };
+  }
+
+  /** A small bounce while walking. Turns off cleanly when he stops. */
+  setWalking(walking: boolean) {
+    if (walking && !this.walk && !this.swing) {
+      this.walk = this.scene.tweens.add({
+        targets: this.rig,
+        y: -WALK_BOUNCE,
+        duration: WALK_STEP_MS,
+        ease: 'Sine.easeOut',
+        yoyo: true,
+        repeat: -1,
+      });
+    } else if (!walking && this.walk) {
+      this.walk.stop();
+      this.walk = null;
+      this.rig.setY(0);
+    }
   }
 
   startMining() {
+    this.setWalking(false);
     this.stopMining();
 
     this.swing = this.scene.tweens.add({

@@ -27,14 +27,14 @@ export class DiscoveriesScene extends Phaser.Scene {
   private summaryText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
 
-  private returnTo = 'SiteSelectScene'; // the scene that opened this one
+  private returnTo = 'WorldScene'; // the scene that opened this one
 
   constructor() {
     super('DiscoveriesScene');
   }
 
   init(data: { from?: string }) {
-    this.returnTo = data.from ?? 'SiteSelectScene';
+    this.returnTo = data.from ?? 'WorldScene';
   }
 
   create() {

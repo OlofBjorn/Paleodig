@@ -39,7 +39,7 @@ export class BootScene extends Phaser.Scene {
           this.registry.set('report', result.report);
           this.scene.start('EndScene');
         } else {
-          this.scene.start('SiteSelectScene');
+          this.scene.start('WorldScene');
         }
       } else {
         // The server doesn't know this id (e.g. the database was reset): start fresh.

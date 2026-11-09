@@ -10,7 +10,7 @@ import {
   type Player,
 } from '../api';
 import type { ConfirmDialog } from '../ui/ConfirmDialog.js';
-import { openEndGameDialog } from '../ui/endgameDialog.js';
+import { openEndGameDialog } from '../ui/endgameDialog.ts';
 import { revealItem } from '../ui/ItemReveal.js';
 import { itemTextureKey, loadTextures, siteTextureKey } from '../ui/loadTextures.js';
 import { Miner, preloadMinerTextures } from '../ui/Miner.js';

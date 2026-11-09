@@ -55,14 +55,14 @@ export class InventoryScene extends Phaser.Scene {
   private nameButton!: Phaser.GameObjects.Rectangle;
   private nameLabel!: Phaser.GameObjects.Text;
 
-  private returnTo = 'SiteSelectScene'; // the scene that opened this one
+  private returnTo = 'WorldScene'; // the scene that opened this one
 
   constructor() {
     super('InventoryScene');
   }
 
   init(data: { from?: string }) {
-    this.returnTo = data.from ?? 'SiteSelectScene';
+    this.returnTo = data.from ?? 'WorldScene';
   }
 
   create() {

@@ -68,7 +68,7 @@ export class EndScene extends Phaser.Scene {
   private playAgain() {
     // Forget this game entirely. The next load asks for a name and starts a fresh one.
     clearStoredPlayerId();
-    for (const key of ['player', 'report', 'siteId', 'sites']) {
+    for (const key of ['player', 'report', 'sites', 'minerPos']) {
       this.registry.remove(key);
     }
     this.scene.start('NameScene');
