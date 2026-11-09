@@ -24,3 +24,8 @@ export function loadTextures(
     scene.load.start();
   });
 }
+
+/** Texture key for an item's icon. The inventory uses the same key, so icons are loaded once. */
+export function itemTextureKey(image: string): string {
+  return `item-image:${image}`;
+}
