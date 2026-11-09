@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickWeighted } from './weightedPick';
+import { pickWeighted } from './weightedPick.js';
 
 const items = [
   { name: 'a', weight: 1 },

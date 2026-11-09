@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeGenus, normalizeSpecies } from './naming';
+import { normalizeGenus, normalizeSpecies } from './naming.js';
 
 describe('normalizeGenus', () => {
   it('capitalises and trims', () => {

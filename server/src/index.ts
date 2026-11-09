@@ -30,7 +30,6 @@ async function start() {
         'http://localhost:4173',
         'https://paleodig.vercel.app',
         'https://paleodig-wkvi.vercel.app',
-        'https://paleodig-wkvi-jq09zb64o-olof-bjorns-projects.vercel.app',
       ]);
 
       if (!origin || allowed.has(origin) || /https:\/\/.*\.vercel\.app$/.test(origin)) {

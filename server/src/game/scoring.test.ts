@@ -7,7 +7,7 @@ import {
   type ScoringSpecimen,
   type ScoringTaxon,
   type Tier,
-} from './scoring';
+} from './scoring.js';
 
 const ANIMALS = [
   { id: 1, genus: 'Tyrannosaurus', species: 'rex' },
