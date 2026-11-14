@@ -15,9 +15,18 @@
  *    ones are junior synonyms: their specimens still count, but they earn no species or genus
  *    points and cost a small duplicate penalty.
  *  - Points: per correctly grouped specimen (by diagnostic tier), per correct senior species,
- *    and per valid genus that holds at least one such species. A genus is valid only while its
- *    holotype is named within it. Species under an invalid genus still score as species, they
- *    just don't earn the genus points.
+ *    and per valid genus.
+ *  - A genus stands or falls on its HOLOTYPE'S SPECIES, the one every other species in it is
+ *    compared against:
+ *      * holotype no longer named in it (moved or sold)  -> invalid
+ *      * holotype's species not verified (dubious, or
+ *        a mix of animals)                               -> dubious, even if another species
+ *                                                           in the genus is valid
+ *      * holotype's species duplicates an older name in
+ *        another genus                                   -> junior synonym
+ *      * otherwise                                       -> valid
+ *    A valid species in a genus that isn't valid still scores as a species, it just earns no
+ *    genus points.
  *  - Every fossil sold costs points, more for more diagnostic fossils.
  *  - Money counts for a little, so it can never outweigh the science.
  */
@@ -96,7 +105,7 @@ export interface NameRef {
 
 export interface SpeciesResult extends NameRef {
   genusId: number;
-  /** Whether its genus is currently valid (its holotype is named within it). */
+  /** Whether its genus is valid. False for a dubious, synonymised or invalid genus. */
   genusValid: boolean;
   verdict: SpeciesVerdict;
   /** At least one specimen is a high-diagnostic fossil. */
@@ -124,19 +133,21 @@ export interface SynonymResult {
 }
 
 /**
- *  credited - valid, and holds at least one correct senior species
- *  wasted   - valid, but nothing in it earned species points (see reason)
+ *  valid    - its holotype's species was verified
+ *  dubious  - its holotype is still named in it, but that species could not be verified
+ *             with certainty. Not a synonym, not invalid: just not considered valid
+ *  synonym  - its holotype's species duplicates an older name in another genus
  *  invalid  - its holotype is no longer named within it; the name stays taken
  */
-export type GenusStatus = 'credited' | 'wasted' | 'invalid';
+export type GenusStatus = 'valid' | 'dubious' | 'synonym' | 'invalid';
 
 export interface GenusResult {
   genusId: number;
   name: string;
   status: GenusStatus;
   points: number;
-  /** Why a valid genus was wasted: only duplicate names, or only unconfirmed/wrong species. */
-  reason: 'synonyms' | 'unconfirmed' | null;
+  /** The species the holotype is named in, which decides the genus. Null if it has none. */
+  holotypeTaxonId: number | null;
 }
 
 export interface LostFossil {
@@ -269,7 +280,7 @@ export function scoreGame(input: ScoringInput): ScoreReport {
       result: {
         taxonId: taxon.id,
         genusId: genus.id,
-        genusValid: validGenusIds.has(genus.id),
+        genusValid: false, // set once the genera have been judged
         genus: genus.name,
         species: taxon.speciesName,
         verdict,
@@ -334,32 +345,49 @@ export function scoreGame(input: ScoringInput): ScoreReport {
     if (sp.verdict === 'correct' && sp.synonymOf === null) sp.points = SCORING.speciesPoints;
   }
 
-  // Genus points: a valid genus is credited when it holds at least one species that earned points.
+  // Genera. Each one is judged by the species its holotype is named in.
+  const speciesByTaxonId = new Map(species.map((sp) => [sp.taxonId, sp]));
+
   const genera: GenusResult[] = [...input.genera]
     .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id - b.id)
     .map((g): GenusResult => {
+      // The holotype left (moved, unnamed or sold): the name stays taken but has no ground.
       if (!validGenusIds.has(g.id)) {
-        return { genusId: g.id, name: g.name, status: 'invalid', points: 0, reason: null };
+        return { genusId: g.id, name: g.name, status: 'invalid', points: 0, holotypeTaxonId: null };
       }
-      const own = species.filter((sp) => sp.genusId === g.id);
-      if (own.some((sp) => sp.points > 0)) {
-        return {
-          genusId: g.id,
-          name: g.name,
-          status: 'credited',
-          points: SCORING.genusPoints,
-          reason: null,
-        };
+
+      const holotype = specimenById.get(g.holotypeSpecimenId);
+      const holotypeTaxonId = holotype?.taxonId ?? null;
+      const holotypeSpecies =
+        holotypeTaxonId !== null ? speciesByTaxonId.get(holotypeTaxonId) : undefined;
+
+      let status: GenusStatus;
+      if (!holotypeSpecies || holotypeSpecies.verdict !== 'correct') {
+        // Nothing verifies the species the genus is built on, so nothing else in it can rescue it.
+        status = 'dubious';
+      } else if (holotypeSpecies.synonymOf && !holotypeSpecies.synonymOf.sameGenus) {
+        // Its founding species is just another name for an animal in an older genus.
+        status = 'synonym';
+      } else {
+        // Either a verified species, or a junior synonym of an older species in this same genus,
+        // which still stands on that older species.
+        status = 'valid';
       }
-      const onlyDuplicates = own.some((sp) => sp.verdict === 'correct' && sp.synonymOf !== null);
+
       return {
         genusId: g.id,
         name: g.name,
-        status: 'wasted',
-        points: 0,
-        reason: onlyDuplicates ? 'synonyms' : 'unconfirmed',
+        status,
+        points: status === 'valid' ? SCORING.genusPoints : 0,
+        holotypeTaxonId,
       };
     });
+
+  // Now that every genus is judged, tell each species whether its genus is valid.
+  const genusStatusById = new Map(genera.map((g) => [g.genusId, g.status]));
+  for (const sp of species) {
+    sp.genusValid = genusStatusById.get(sp.genusId) === 'valid';
+  }
 
   // Totals.
   const specimenCredit = species.reduce(

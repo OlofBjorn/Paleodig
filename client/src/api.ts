@@ -274,9 +274,11 @@ export interface SynonymResult {
 export interface GenusResult {
   genusId: number;
   name: string;
-  status: 'credited' | 'wasted' | 'invalid';
+  /** valid; dubious (its holotype species couldn't be verified); junior synonym; or invalid. */
+  status: 'valid' | 'dubious' | 'synonym' | 'invalid';
   points: number;
-  reason: 'synonyms' | 'unconfirmed' | null;
+  /** The species the holotype is named in: the one the genus stands or falls on. */
+  holotypeTaxonId: number | null;
 }
 
 export interface LostFossil {

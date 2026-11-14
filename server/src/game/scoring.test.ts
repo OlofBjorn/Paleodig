@@ -7,7 +7,7 @@ import {
   type ScoringSpecimen,
   type ScoringTaxon,
   type Tier,
-} from './scoring.js';
+} from './scoring';
 
 const ANIMALS = [
   { id: 1, genus: 'Tyrannosaurus', species: 'rex' },
@@ -83,14 +83,14 @@ describe('species verdicts', () => {
     expect(report.species[0].verdict).toBe('correct');
     expect(report.species[0].hasDiagnostic).toBe(true);
     expect(report.species[0].genusValid).toBe(true);
-    expect(report.genera[0].status).toBe('credited');
+    expect(report.genera[0].status).toBe('valid');
     expect(report.breakdown.specimenCredit).toBe(credit.high + credit.low);
     expect(report.breakdown.speciesPoints).toBe(speciesPoints);
     expect(report.breakdown.genusPoints).toBe(genusPoints);
     expect(report.score).toBe(credit.high + credit.low + speciesPoints + genusPoints);
   });
 
-  it('a lone non-diagnostic fossil is dubious: it earns nothing, and wastes its genus', () => {
+  it('a lone non-diagnostic fossil is dubious: it earns nothing, and its genus is dubious too', () => {
     for (const tier of ['medium', 'low'] as const) {
       const report = scoreGame(
         game({
@@ -101,7 +101,7 @@ describe('species verdicts', () => {
       );
       expect(report.species[0].verdict).toBe('dubious');
       expect(report.species[0].points).toBe(0);
-      expect(report.genera[0]).toMatchObject({ status: 'wasted', points: 0, reason: 'unconfirmed' });
+      expect(report.genera[0]).toMatchObject({ status: 'dubious', points: 0, holotypeTaxonId: 1 });
       expect(report.score).toBe(0);
     }
   });
@@ -141,13 +141,57 @@ describe('species verdicts', () => {
     expect(report.breakdown.specimenCredit).toBe(0);
     expect(report.breakdown.speciesPoints).toBe(0);
     expect(report.breakdown.genusPoints).toBe(0);
+    expect(report.genera[0].status).toBe('dubious'); // a genus built on a chimera can't be verified
     expect(report.breakdown.wrongMergePenalty).toBe(SCORING.wrongMergePenalty);
     expect(report.score).toBe(0); // never negative
   });
 });
 
-describe('genus points', () => {
-  it('a genus earns its points once, however many species it holds', () => {
+describe('genus validity follows the holotype species', () => {
+  it('a valid species in a genus whose HOLOTYPE species is dubious: the species scores, the genus is dubious', () => {
+    // Specimen 1 is the holotype, and its species (rex) rests on that one low fossil: dubious.
+    // Another species in the same genus (magnus) has a skull and is valid on its own.
+    const report = scoreGame(
+      game({
+        specimens: [
+          fossil(1, 1, 'low', { taxonId: 1 }),
+          fossil(2, 2, 'high', { taxonId: 2 }),
+        ],
+        taxa: [taxon(1, 1, 'rex', 1), taxon(2, 1, 'magnus', 2)],
+        genera: [genus(1, 'Toothosaurus', 1, 1)],
+      }),
+    );
+
+    const rex = report.species.find((s) => s.species === 'rex');
+    const magnus = report.species.find((s) => s.species === 'magnus');
+    expect(rex?.verdict).toBe('dubious');
+    expect(magnus?.verdict).toBe('correct');
+    expect(magnus?.genusValid).toBe(false); // so the screen can put the genus in quotes
+    expect(magnus?.points).toBe(speciesPoints); // but it still earns its species points
+
+    expect(report.genera[0]).toMatchObject({ status: 'dubious', points: 0, holotypeTaxonId: 1 });
+    expect(report.breakdown.speciesPoints).toBe(speciesPoints);
+    expect(report.breakdown.genusPoints).toBe(0);
+  });
+
+  it('a genus is valid when its holotype species is verified, even if another species in it is dubious', () => {
+    const report = scoreGame(
+      game({
+        specimens: [
+          fossil(1, 1, 'high', { taxonId: 1 }), // holotype, valid species
+          fossil(2, 2, 'low', { taxonId: 2 }), // a dubious second species in the same genus
+        ],
+        taxa: [taxon(1, 1, 'rex', 1), taxon(2, 1, 'magnus', 2)],
+        genera: [genus(1, 'Toothosaurus', 1, 1)],
+      }),
+    );
+
+    expect(report.genera[0].status).toBe('valid');
+    expect(report.species.find((s) => s.species === 'magnus')?.verdict).toBe('dubious');
+    expect(report.breakdown.genusPoints).toBe(genusPoints);
+  });
+
+  it('a genus earns its points once, however many verified species it holds', () => {
     const report = scoreGame(
       game({
         specimens: [
@@ -163,7 +207,26 @@ describe('genus points', () => {
     expect(report.breakdown.genusPoints).toBe(genusPoints);
   });
 
-  it('species under an invalid genus still score as species, but earn no genus points', () => {
+  it('a genus whose holotype species is a junior synonym in the SAME genus is still valid', () => {
+    // Specimen 2 (the holotype) is in "magnus", a later name for the same animal as "rex",
+    // which sits in the same genus. The genus still stands on the older species.
+    const report = scoreGame(
+      game({
+        specimens: [
+          fossil(1, 1, 'high', { taxonId: 1 }),
+          fossil(2, 1, 'low', { taxonId: 2 }),
+          fossil(3, 1, 'low', { taxonId: 2 }),
+        ],
+        taxa: [taxon(1, 1, 'rex', 1), taxon(2, 1, 'magnus', 2)],
+        genera: [genus(1, 'Toothosaurus', 1, 2)],
+      }),
+    );
+
+    expect(report.synonyms[0].sameGenus).toBe(true);
+    expect(report.genera[0].status).toBe('valid');
+  });
+
+  it('species under an invalid genus (holotype moved) still score as species, but earn no genus points', () => {
     // Specimen 1 is the holotype of both genera but now lives in Lizardodon, so Toothosaurus
     // is invalid. Specimens 2 and 3 (a different animal) are still named under it.
     const report = scoreGame(
@@ -182,13 +245,13 @@ describe('genus points', () => {
     expect(rex).toMatchObject({ verdict: 'correct', genusValid: false, points: speciesPoints });
 
     expect(report.genera.find((g) => g.name === 'Toothosaurus')?.status).toBe('invalid');
-    expect(report.genera.find((g) => g.name === 'Lizardodon')?.status).toBe('credited');
+    expect(report.genera.find((g) => g.name === 'Lizardodon')?.status).toBe('valid');
     expect(report.breakdown.speciesPoints).toBe(2 * speciesPoints);
     expect(report.breakdown.genusPoints).toBe(genusPoints); // only Lizardodon
     expect(report.breakdown.specimenCredit).toBe(credit.high + 2 * credit.low);
   });
 
-  it('selling a genus holotype invalidates the genus; its species keep their own score', () => {
+  it('selling a genus holotype makes the genus invalid; its species keep their own score', () => {
     const report = scoreGame(
       game({
         specimens: [
@@ -234,13 +297,12 @@ describe('synonymy', () => {
     expect(junior?.synonymOf).toMatchObject({ genus: 'Toothosaurus', species: 'rex' });
     expect(junior?.points).toBe(0);
 
-    // The junior's genus name is used up in vain.
+    // The junior's genus is built on a duplicate name, so it is a junior synonym too.
     expect(report.genera.find((g) => g.name === 'Lizardodon')).toMatchObject({
-      status: 'wasted',
+      status: 'synonym',
       points: 0,
-      reason: 'synonyms',
     });
-    expect(report.genera.find((g) => g.name === 'Toothosaurus')?.status).toBe('credited');
+    expect(report.genera.find((g) => g.name === 'Toothosaurus')?.status).toBe('valid');
 
     // Its specimens still count; the one senior species and genus earn their points once.
     expect(report.breakdown.specimenCredit).toBe(credit.high + credit.medium + credit.low);
@@ -265,7 +327,7 @@ describe('synonymy', () => {
     expect(report.synonyms).toHaveLength(1);
     expect(report.synonyms[0].sameGenus).toBe(true);
     expect(report.synonyms[0].junior.species).toBe('magnus');
-    expect(report.genera[0].status).toBe('credited'); // the genus is shared, so not wasted
+    expect(report.genera[0].status).toBe('valid'); // the genus is shared, so it stands
   });
 
   it('different animals are never synonyms', () => {
@@ -285,7 +347,7 @@ describe('synonymy', () => {
     expect(report.breakdown.genusPoints).toBe(2 * genusPoints);
   });
 
-  it('a dubious name is just a waste, not a duplicate', () => {
+  it('a dubious name is just a waste, not a duplicate, and its genus is dubious rather than a synonym', () => {
     const report = scoreGame(
       game({
         specimens: [
@@ -300,7 +362,7 @@ describe('synonymy', () => {
     expect(report.species.find((s) => s.species === 'prorsus')?.verdict).toBe('dubious');
     expect(report.synonyms).toHaveLength(0);
     expect(report.breakdown.duplicatePenalty).toBe(0);
-    expect(report.genera.find((g) => g.name === 'Lizardodon')?.status).toBe('wasted');
+    expect(report.genera.find((g) => g.name === 'Lizardodon')?.status).toBe('dubious');
   });
 });
 
