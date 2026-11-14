@@ -91,6 +91,8 @@ export class EndScene extends Phaser.Scene {
       return s ? nameOf(s) : `${ref.genus} ${ref.species}`;
     };
 
+    const genusStatus = new Map(report.genera.map((g) => [g.genusId, g.status]));
+
     // The player's valid species for each true animal (by id), if they got it right.
     const validByAnimal = new Map<number, SpeciesResult>();
     for (const s of report.species) {
@@ -151,10 +153,16 @@ export class EndScene extends Phaser.Scene {
         );
       }
       if (!s.genusValid) {
+        const why =
+          genusStatus.get(s.genusId) === 'dubious'
+            ? 'is dubious'
+            : genusStatus.get(s.genusId) === 'synonym'
+              ? 'is a junior synonym'
+              : 'lacks ground';
         root.appendChild(
           this.el(
             'div',
-            `The species is valid, but the genus "${s.genus}" lacks ground, so scientists are debating reassigning the species to its own genus.`,
+            `The species is valid, but the genus "${s.genus}" ${why}, so scientists are debating reassigning the valid species to a new genus.`,
             'margin-left: 16px; color: #ffcf8a;',
           ),
         );
@@ -174,7 +182,7 @@ export class EndScene extends Phaser.Scene {
 
         // If the junior's whole genus held only duplicates, the genus name was wasted too.
         const juniorGenus = report.genera.find((g) => g.name === syn.junior.genus);
-        if (!syn.sameGenus && juniorGenus?.status === 'wasted' && juniorGenus.reason === 'synonyms') {
+        if (!syn.sameGenus && juniorGenus?.status === 'synonym') {
           text += ` ${syn.junior.genus} was synonymised into ${syn.senior.genus}.`;
         }
         root.appendChild(this.el('div', text, 'margin-top: 8px;'));
@@ -202,11 +210,13 @@ export class EndScene extends Phaser.Scene {
       }
     }
 
-    // ---- dubious
-    const dubious = report.species.filter((s) => s.verdict === 'dubious');
-    if (dubious.length > 0) {
+    // ---- uncertain findings: species that could not be verified, and the genera built on them
+    const dubiousSpecies = report.species.filter((s) => s.verdict === 'dubious');
+    const dubiousGenera = report.genera.filter((g) => g.status === 'dubious');
+    if (dubiousSpecies.length > 0 || dubiousGenera.length > 0) {
       root.appendChild(this.heading('Uncertain findings'));
-      for (const s of dubious) {
+
+      for (const s of dubiousSpecies) {
         const only = s.specimens[0];
         const who = identityOf(only.animal.id);
         root.appendChild(
@@ -214,6 +224,23 @@ export class EndScene extends Phaser.Scene {
             'div',
             `${nameOf(s)} rests on a single fossil (${only.itemName}) that is not diagnostic, so the name is considered doubtful. ` +
               (who ? `It was in fact the same animal as ${who}.` : 'It was a still undiscovered species.'),
+            'margin-top: 8px;',
+          ),
+        );
+      }
+
+      // A genus stands or falls on its holotype's species. If that can't be verified, the genus
+      // is dubious, even if another species in it is valid.
+      for (const g of dubiousGenera) {
+        const holotypeSpecies =
+          g.holotypeTaxonId !== null ? speciesByTaxon.get(g.holotypeTaxonId) : undefined;
+        const basis = holotypeSpecies
+          ? `it rests on its holotype species, ${nameOf(holotypeSpecies)}, which could not be verified with certainty`
+          : 'its holotype species could not be verified with certainty';
+        root.appendChild(
+          this.el(
+            'div',
+            `The genus ${g.name} is dubious: ${basis}, so the genus is not considered valid.`,
             'margin-top: 8px;',
           ),
         );
@@ -226,13 +253,17 @@ export class EndScene extends Phaser.Scene {
       for (const g of report.genera) {
         let text: string;
         let css = '';
-        if (g.status === 'credited') {
+        if (g.status === 'valid') {
           text = `${g.name}: valid`;
-        } else if (g.status === 'wasted') {
-          text =
-            g.reason === 'synonyms'
-              ? `${g.name}: valid, but it only holds a duplicate name`
-              : `${g.name}: valid, but nothing in it was confirmed`;
+        } else if (g.status === 'dubious') {
+          // Its holotype is still named in it and it isn't a synonym, but the species it is built
+          // on could not be verified with certainty: not invalid, but not valid either.
+          // Listed simply; "Uncertain findings" above explains why.
+          text = `${g.name}: dubious`;
+          css = 'opacity: 0.85;';
+        } else if (g.status === 'synonym') {
+          // "Described twice" above explains which name it duplicates.
+          text = `${g.name}: junior synonym`;
           css = 'opacity: 0.75;';
         } else {
           text = `"${g.name}": lacks ground. Its holotype is no longer named in it, and the name stays taken.`;
