@@ -102,6 +102,7 @@ export class WorldScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       this.closeDialog();
       this.savePosition();
+      this.input.keyboard?.removeCapture('UP,DOWN,LEFT,RIGHT');
     });
 
     this.statusText = this.add
@@ -228,14 +229,12 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private setupInput() {
-    // Keys are added without "capture", so the game never swallows keystrokes that other screens
-    // (the name fields) need for typing.
     const keyboard = this.input.keyboard;
     if (keyboard) {
-      this.keys = keyboard.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D,SPACE', false) as Record<
-        string,
-        Phaser.Input.Keyboard.Key
-      >;
+      // Capture arrows only while the world is active, preventing browser page scrolling.
+      const arrows = keyboard.addKeys('UP,DOWN,LEFT,RIGHT', true);
+      const otherKeys = keyboard.addKeys('W,A,S,D,SPACE', false);
+      this.keys = { ...arrows, ...otherKeys } as Record<string, Phaser.Input.Keyboard.Key>;
     }
 
     // Clicking digs, unless the click landed on a button, the text panel or a dialog.
