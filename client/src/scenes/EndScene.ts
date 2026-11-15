@@ -82,9 +82,15 @@ export class EndScene extends Phaser.Scene {
     // ---- naming helpers: the player's own names, never the true ones
     const speciesByTaxon = new Map(report.species.map((s) => [s.taxonId, s]));
 
-    /** A species name, with the genus in quotes when the genus lacks ground. */
-    const nameOf = (s: { genus: string; species: string; genusValid: boolean }) =>
-      s.genusValid ? `${s.genus} ${s.species}` : `"${s.genus}" ${s.species}`;
+    /**
+     * A species name. The genus goes in quotes only when the species itself is valid but its genus
+     * is not: that is the "valid species, doubtful genus" case. A dubious species in a dubious
+     * genus, a chimera, or a junior synonym is just named plainly.
+     */
+    const nameOf = (s: SpeciesResult) => {
+      const validSpecies = s.verdict === 'correct' && !s.synonymOf;
+      return validSpecies && !s.genusValid ? `"${s.genus}" ${s.species}` : `${s.genus} ${s.species}`;
+    };
 
     const refName = (ref: NameRef) => {
       const s = speciesByTaxon.get(ref.taxonId);
@@ -266,7 +272,7 @@ export class EndScene extends Phaser.Scene {
           text = `${g.name}: junior synonym`;
           css = 'opacity: 0.75;';
         } else {
-          text = `"${g.name}": lacks ground. Its holotype is no longer named in it, and the name stays taken.`;
+          text = `${g.name}: lacks ground. Its holotype is no longer named in it, and the name stays taken.`;
           css = 'color: #ffcf8a;';
         }
         root.appendChild(this.el('div', text, `margin-top: 4px; ${css}`));
