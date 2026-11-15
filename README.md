@@ -20,73 +20,100 @@ Once you believe your work is done, you can press the end button to end the game
 
 ## Installation
 
-Step 1:
+### Prerequisites
 
-Clone the depository:
-```
-    git clone https://github.com/OlofBjorn/Paleodig
-    cd Paleodig
+- Git
+- [Node.js](https://nodejs.org/) 22.12 or newer, which includes npm. Vite also supports Node.js 20.19 or newer.
+- Docker with Docker Compose, for the local PostgreSQL database.
+
+On macOS or Windows, install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) and open it before continuing. On Linux, install Docker Engine and the Docker Compose plugin. The Docker command-line client alone is not enough; the Docker engine must be running.
+
+Check that the required tools are available:
+
+```sh
+git --version
+node --version
+npm --version
+docker --version
+docker compose version
+docker info
 ```
 
-Step 2:
+### Setup
 
-Install NPM:
-```
-    npm install
+Clone the repository and install its dependencies from the repository root:
+
+```sh
+git clone https://github.com/OlofBjorn/Paleodig.git
+cd Paleodig
+npm install
 ```
 
-Step 3:
+Create the server's local environment file. On macOS, Linux, or Git Bash:
 
-Create local env:
-```
+```sh
 cp server/.env.example server/.env
 ```
 
-Step 4:
+In PowerShell, use:
 
-Install docker desktop:
-https://www.docker.com/
-(Signup required)
-
-Step 5:
-
-Start PostgreSQL:
+```powershell
+Copy-Item server/.env.example server/.env
 ```
+
+The example config connects to the local PostgreSQL container defined in `docker-compose.yml`. Start the database; Docker downloads the PostgreSQL image if it is not already present:
+
+```sh
 docker compose up -d
 ```
 
-Step 6:
+Wait for PostgreSQL to finish starting before running migrations:
 
-Create the database schema and load game data:
-```
-    npm run db:migrate -w server
-    npm run db:seed -w server
+```sh
+docker compose exec db pg_isready -U paleodig -d paleodig
 ```
 
-Step 7:
+Continue once the output says the server is accepting connections.
 
-Run the server and client in two terminals:
+Create the schema and add the initial game data:
+
+```sh
+npm run db:migrate -w server
+npm run db:seed -w server
 ```
-    npm run dev:server
+
+### Run the game
+
+Open two terminals at the repository root. Start the API server in the first:
+
+```sh
+npm run dev:server
 ```
+
+Start the client in the second:
+
+```sh
+npm run dev:client
 ```
-    npm run dev:server
-```
+
+Open the client URL printed by Vite, usually <http://localhost:5173>. To verify that the server can reach PostgreSQL, visit <http://localhost:3000/api/health>; it should return `{"status":"ok","db":"up"}`.
+
+To stop the local database, run `docker compose down` from the repository root. This keeps its data volume for the next run.
 
 ------
 
 ## Techstack
 
-Frontend:
-    * Phaser
-    * Typescript
-    * Vite
+### Frontend
+- Phaser
+- TypeScript
+- Vite
 
-Backend:
-    * Node.js
-    * Fastify
-    * Typescript
+### Backend
+- Node.js
+- Fastify
+- TypeScript
 
-Database:
-    * PostgreSQL
-    * Drizzle
+### Database
+- PostgreSQL
+- Drizzle ORM
