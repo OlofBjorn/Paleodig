@@ -10,7 +10,7 @@ export interface Player {
   id: string;
   name: string;
   balance: number;
-  /** True once the game has been ended and scored. */
+  /**True once the game has been ended and scored. */
   ended: boolean;
 }
 
@@ -22,7 +22,7 @@ export interface DigSite {
   digCost: number;
 }
 
-/** What the server sends about an item. Never includes the hidden animal or diagnostic data. */
+/**What the server sends about an item. Never includes the hidden animal or diagnostic data. */
 export interface DugItem {
   id: number;
   kind: ItemKind;
@@ -41,7 +41,7 @@ export interface DigResult {
 
 /* ------------------------------- http helper ------------------------------ */
 
-/** An error response from the server, carrying the HTTP status so scenes can react to it. */
+/**An error response from the server, carrying the HTTP status so scenes can react to it. */
 export class ApiError extends Error {
   status: number;
 
@@ -62,7 +62,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 /* ----------------------------- session storage ---------------------------- */
 
-// localStorage can throw (private mode, blocked storage), so never let it crash the game.
+//localStorage can throw (private mode, blocked storage), so never let it crash the game.
 export function getStoredPlayerId(): string | null {
   try {
     return localStorage.getItem(PLAYER_KEY);
@@ -75,7 +75,7 @@ export function storePlayerId(id: string): void {
   try {
     localStorage.setItem(PLAYER_KEY, id);
   } catch {
-    // Without storage the session lasts until the page is closed.
+    //Without storage the session lasts until the page is closed.
   }
 }
 
@@ -83,7 +83,7 @@ export function clearStoredPlayerId(): void {
   try {
     localStorage.removeItem(PLAYER_KEY);
   } catch {
-    // ignore
+    //ignore
   }
 }
 
@@ -98,7 +98,7 @@ export async function createPlayer(name: string): Promise<Player> {
   return data.player;
 }
 
-/** Returns null if the server doesn't know this player; throws on any other failure. */
+/**Returns null if the server doesn't know this player; throws on any other failure. */
 export async function fetchPlayer(id: string): Promise<Player | null> {
   try {
     const data = await request<{ player: Player }>(`/api/players/${encodeURIComponent(id)}`);
@@ -109,7 +109,7 @@ export async function fetchPlayer(id: string): Promise<Player | null> {
   }
 }
 
-/* ------------------------------- sites & dig ------------------------------ */
+/*------------------------------- sites & dig ------------------------------ */
 
 export async function fetchSites(): Promise<DigSite[]> {
   const data = await request<{ sites: DigSite[] }>('/api/sites');
@@ -124,14 +124,14 @@ export function dig(playerId: string, siteId: number): Promise<DigResult> {
   });
 }
 
-/** Dig site backgrounds are static files served by the client from public/images/sites/. */
+/**Dig site backgrounds are static files served by the client from public/images/sites/. */
 export function siteImageUrl(image: string): string {
   return `${import.meta.env.BASE_URL}images/sites/${encodeURIComponent(image)}`;
 }
 
 /* -------------------------------- inventory ------------------------------- */
 
-/** The player's own current name for a specimen. isHolotype: it is the holotype of that genus. */
+/**The player's own current name for a specimen. isHolotype: it is the holotype of that genus. */
 export interface SpecimenName {
   genus: string;
   species: string;
@@ -170,7 +170,7 @@ export function sellSpecimen(playerId: string, specimenId: number): Promise<Sell
   );
 }
 
-/* --------------------------------- naming --------------------------------- */
+/*--------------------------------- naming --------------------------------- */
 
 export interface NameResult {
   specimenId: number;
@@ -215,7 +215,7 @@ export interface DiscoveredGenus {
   id: number;
   name: string;
   valid: boolean;
-  /** Why an invalid genus is invalid. */
+  //Why an invalid genus is invalid.
   invalidReason: 'sold' | 'unnamed' | 'moved' | null;
   holotype: { specimenId: number; itemName: string; sold: boolean };
   species: DiscoveredSpecies[];
@@ -274,10 +274,10 @@ export interface SynonymResult {
 export interface GenusResult {
   genusId: number;
   name: string;
-  /** valid; dubious (its holotype species couldn't be verified); junior synonym; or invalid. */
+  /**valid; dubious (its holotype species couldn't be verified); junior synonym; or invalid. */
   status: 'valid' | 'dubious' | 'synonym' | 'invalid';
   points: number;
-  /** The species the holotype is named in: the one the genus stands or falls on. */
+  /**The species the holotype is named in: the one the genus stands or falls on. */
   holotypeTaxonId: number | null;
 }
 
@@ -313,17 +313,17 @@ export interface EndResult {
   report: ScoreReport;
 }
 
-/** Ends and scores the game. Safe to call again: an ended game returns the same report. */
+/**Ends and scores the game. Safe to call again: an ended game returns the same report. */
 export function endGame(playerId: string): Promise<EndResult> {
   return request(`/api/players/${encodeURIComponent(playerId)}/end`, { method: 'POST' });
 }
 
-/** The report for a game that has already ended. The server refuses it while a game is running. */
+/**The report for a game that has already ended. The server refuses it while a game is running. */
 export function fetchReport(playerId: string): Promise<EndResult> {
   return request(`/api/players/${encodeURIComponent(playerId)}/report`);
 }
 
-/** True when the server rejected a request because the game is over. */
+/**True when the server rejected a request because the game is over. */
 export function isGameEnded(err: unknown): boolean {
   return err instanceof ApiError && err.status === 409 && /already ended/i.test(err.message);
 }

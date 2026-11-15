@@ -22,8 +22,7 @@
   "homepage": "https://github.com/OlofBjorn/Paleodig#readme",
   "workspaces": [
     "client",
-    "server",
-    "shared"
+    "server"
   ],
   "devDependencies": {
     "@types/node": "^26.6.5"

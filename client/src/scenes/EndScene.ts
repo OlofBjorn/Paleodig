@@ -21,13 +21,7 @@ const LIST_STYLE = [
   'border: 2px solid #c8963e',
 ].join('; ');
 
-/**
- * The results: the score, and what scientists a hundred years later made of the collection.
- *
- * In the fiction of the game, the player's names ARE the real names: real dinosaurs had no names
- * until somebody coined them. So this screen never shows the true animal names. Every animal is
- * described through the player's own valid species, or as "a still undiscovered species".
- */
+//Result screen
 export class EndScene extends Phaser.Scene {
   constructor() {
     super('EndScene');
@@ -38,7 +32,7 @@ export class EndScene extends Phaser.Scene {
     const report = this.registry.get('report') as ScoreReport | undefined;
     const player = this.registry.get('player') as Player | undefined;
     if (!report || !player) {
-      this.scene.start('BootScene'); // nothing to show: let the boot flow work out where we belong
+      this.scene.start('BootScene');
       return;
     }
 
@@ -52,7 +46,6 @@ export class EndScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // A real scrollable <div>, so wheel, trackpad and touch scrolling all work.
     const dom = this.add.dom(width / 2, 325, 'div', LIST_STYLE);
     this.fill(dom.node as HTMLDivElement, report);
 
@@ -66,7 +59,6 @@ export class EndScene extends Phaser.Scene {
   }
 
   private playAgain() {
-    // Forget this game entirely. The next load asks for a name and starts a fresh one.
     clearStoredPlayerId();
     for (const key of ['player', 'report', 'sites', 'minerPos']) {
       this.registry.remove(key);
@@ -99,7 +91,7 @@ export class EndScene extends Phaser.Scene {
 
     const genusStatus = new Map(report.genera.map((g) => [g.genusId, g.status]));
 
-    // The player's valid species for each true animal (by id), if they got it right.
+    //The player's valid species for each true animal (by id), if they got it right.
     const validByAnimal = new Map<number, SpeciesResult>();
     for (const s of report.species) {
       if (s.verdict === 'correct' && !s.synonymOf) validByAnimal.set(s.animals[0].id, s);
@@ -235,7 +227,7 @@ export class EndScene extends Phaser.Scene {
         );
       }
 
-      // A genus stands or falls on its holotype's species. If that can't be verified, the genus
+      //A genus stands or falls on its holotype's species. If that can't be verified, the genus
       // is dubious, even if another species in it is valid.
       for (const g of dubiousGenera) {
         const holotypeSpecies =
@@ -262,13 +254,13 @@ export class EndScene extends Phaser.Scene {
         if (g.status === 'valid') {
           text = `${g.name}: valid`;
         } else if (g.status === 'dubious') {
-          // Its holotype is still named in it and it isn't a synonym, but the species it is built
+          //Its holotype is still named in it and it isn't a synonym, but the species it is built
           // on could not be verified with certainty: not invalid, but not valid either.
           // Listed simply; "Uncertain findings" above explains why.
           text = `${g.name}: dubious`;
           css = 'opacity: 0.85;';
         } else if (g.status === 'synonym') {
-          // "Described twice" above explains which name it duplicates.
+          //"Described twice" above explains which name it duplicates.
           text = `${g.name}: junior synonym`;
           css = 'opacity: 0.75;';
         } else {

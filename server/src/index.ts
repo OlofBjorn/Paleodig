@@ -11,7 +11,7 @@ import { specimenRoutes } from './routes/specimens.js';
 
 const app = Fastify({ logger: true });
 
-/** Confirms the server is up and can reach Postgres. Also useful for the deploy host's health check. */
+/**Confirms the server is up and can reach Postgres. Also useful for the deploy host's health check.*/
 app.get('/api/health', async (_req, reply) => {
   try {
     await db.execute(sql`select 1`);
@@ -52,7 +52,7 @@ async function start() {
 
   const port = Number(process.env.PORT ?? 3000);
   try {
-    // 0.0.0.0 so the server is reachable inside a container or on a deploy host
+    //0.0.0.0 so the server is reachable inside a container or on a deploy host
     await app.listen({ port, host: '0.0.0.0' });
   } catch (err) {
     app.log.error(err);

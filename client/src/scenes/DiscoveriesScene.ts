@@ -21,13 +21,13 @@ const LIST_STYLE = [
   'border: 2px solid #c8963e',
 ].join('; ');
 
-/** Lists the player's genera and species, with whether each genus is currently valid. */
+//Lists the player's genera and species, with whether each genus is currently valid.
 export class DiscoveriesScene extends Phaser.Scene {
   private player!: Player;
   private summaryText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
 
-  private returnTo = 'WorldScene'; // the scene that opened this one
+  private returnTo = 'WorldScene'; //the scene that opened this one
 
   constructor() {
     super('DiscoveriesScene');
@@ -80,7 +80,7 @@ export class DiscoveriesScene extends Phaser.Scene {
     } catch (err) {
       if (!this.scene.isActive()) return;
       if (err instanceof ApiError && err.status === 404) {
-        // The server no longer knows this player: start over.
+        //The server no longer knows this player: start over.
         clearStoredPlayerId();
         this.scene.start('BootScene');
         return;
@@ -147,7 +147,7 @@ export class DiscoveriesScene extends Phaser.Scene {
           'margin: 8px 0 0 16px;',
         ),
       );
-      // Each specimen with where it was found: location is the player's main clue.
+      //Each specimen with where it was found: location is the player's main clue.
       for (const specimen of species.specimens) {
         const where = specimen.siteName ? `  -  ${specimen.siteName}` : '';
         block.appendChild(

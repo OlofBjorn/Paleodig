@@ -347,6 +347,10 @@ export class WorldScene extends Phaser.Scene {
       this.time.delayedCall(2000, () => this.showZoneHint());
       return;
     }
+    if (this.player.balance < zone.site.digCost) {
+      this.findText.setText('Not enough money to dig.');
+      return;
+    }
 
     this.busy = true;
     this.clearReveal();

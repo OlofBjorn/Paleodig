@@ -3,7 +3,7 @@ import { createPlayer, storePlayerId } from '../api';
 
 const MAX_NAME_LENGTH = 20;
 
-/** Asks for the player's name and creates their session. */
+//Asks for the player's name and creates their session.
 export class NameScene extends Phaser.Scene {
   private nameInput!: HTMLInputElement;
   private message!: Phaser.GameObjects.Text;
@@ -27,7 +27,7 @@ export class NameScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // A real <input> (via Phaser's DOM layer) gives us typing, paste and mobile keyboards for free.
+    //A real <input> (via Phaser's DOM layer) gives us typing, paste and mobile keyboards for free.
     const dom = this.add.dom(
       width / 2,
       270,
