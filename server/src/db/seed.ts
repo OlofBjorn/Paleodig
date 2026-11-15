@@ -20,12 +20,12 @@ type Size = 'small' | 'medium' | 'large';
 
 const TIER_VALUE: Record<Tier, number> = { high: 120, medium: 60, low: 25 };
 const SIZE_MULTIPLIER: Record<Size, number> = { small: 1, medium: 1.5, large: 2 };
-const TIER_WEIGHT: Record<Tier, number> = { high: 2, medium: 4, low: 6 }; // rarer = more diagnostic
+const TIER_WEIGHT: Record<Tier, number> = { high: 2, medium: 4, low: 6 }; //rarer = more diagnostic
 
-// "Heavy Limb Bone" -> "heavy-limb-bone". Image files are client/public/images/items/<slug>.png
 const slug = (name: string) =>
   name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+//Real dinosaur names are used as placeholder identities in the code database before the player names them.
 const animalData = [
   { genus: 'Tyrannosaurus', species: 'rex' },
   { genus: 'Triceratops', species: 'horridus' },
@@ -35,36 +35,36 @@ const animalData = [
 ];
 
 const fossilData: {
-  animal: string; // matches animalData.genus
+  animal: string; //matches animalData.genus
   boneType: string;
   diagnostic: Tier;
   size: Size;
   name: string;
   description: string;
 }[] = [
-  // Tyrannosaurus
+  //Tyrannosaurus
   { animal: 'Tyrannosaurus', boneType: 'skull', diagnostic: 'high', size: 'large', name: 'Massive Skull', description: 'A huge, deep skull with a robust snout and sockets for enormous teeth.' },
   { animal: 'Tyrannosaurus', boneType: 'arm', diagnostic: 'medium', size: 'small', name: 'Tiny Forelimb', description: 'A strangely small, powerful arm ending in two clawed fingers.' },
   { animal: 'Tyrannosaurus', boneType: 'tooth', diagnostic: 'medium', size: 'small', name: 'Thick Serrated Tooth', description: 'A thick, banana-shaped tooth with coarse serrations along its edges.' },
   { animal: 'Tyrannosaurus', boneType: 'femur', diagnostic: 'low', size: 'large', name: 'Heavy Limb Bone', description: 'A heavy, straight limb bone with a thick shaft.' },
 
-  // Triceratops
+  //Triceratops
   { animal: 'Triceratops', boneType: 'skull', diagnostic: 'high', size: 'large', name: 'Horned Frill Skull', description: 'A giant skull with a wide bony frill and sockets for three facial horns.' },
   { animal: 'Triceratops', boneType: 'horn', diagnostic: 'medium', size: 'medium', name: 'Curved Horn Core', description: 'A long, curved, conical bone that was once sheathed in horn.' },
   { animal: 'Triceratops', boneType: 'femur', diagnostic: 'low', size: 'large', name: 'Stout Limb Bone', description: 'A heavy, straight limb bone with a thick shaft.' },
   { animal: 'Triceratops', boneType: 'rib', diagnostic: 'low', size: 'medium', name: 'Broad Rib', description: 'A long, curved rib, broad and strongly built.' },
 
-  // Stegosaurus
+  //Stegosaurus
   { animal: 'Stegosaurus', boneType: 'plate', diagnostic: 'high', size: 'large', name: 'Diamond Plate', description: 'A broad, thin, diamond-shaped plate of bone with a rough surface.' },
   { animal: 'Stegosaurus', boneType: 'spike', diagnostic: 'medium', size: 'medium', name: 'Tail Spike', description: 'A long, pointed spike of bone with a hollow base.' },
   { animal: 'Stegosaurus', boneType: 'femur', diagnostic: 'low', size: 'large', name: 'Columnar Limb Bone', description: 'A tall, straight, pillar-like limb bone.' },
 
-  // Parasaurolophus
+  //Parasaurolophus
   { animal: 'Parasaurolophus', boneType: 'skull', diagnostic: 'high', size: 'large', name: 'Crested Skull', description: 'A long skull with a hollow, backward-sweeping tube of bone on top.' },
   { animal: 'Parasaurolophus', boneType: 'jaw', diagnostic: 'medium', size: 'medium', name: 'Many-Toothed Jaw', description: 'A broad jaw packed with hundreds of tiny grinding teeth.' },
   { animal: 'Parasaurolophus', boneType: 'vertebra', diagnostic: 'low', size: 'medium', name: 'Spined Vertebra', description: 'A backbone segment with a tall spine on top.' },
 
-  // Velociraptor (no "high" diagnostic fossil: always "uncertain" at best)
+  //Velociraptor (no "high" diagnostic fossil: always "uncertain" at best)
   { animal: 'Velociraptor', boneType: 'claw', diagnostic: 'medium', size: 'small', name: 'Sickle Claw', description: 'A strongly curved, razor-sharp claw from a foot.' },
   { animal: 'Velociraptor', boneType: 'femur', diagnostic: 'low', size: 'small', name: 'Slender Limb Bone', description: 'A straight limb bone with a thick shaft.' },
   { animal: 'Velociraptor', boneType: 'vertebra', diagnostic: 'low', size: 'small', name: 'Light Vertebra', description: 'A small, lightly built backbone segment.' },
@@ -88,7 +88,7 @@ const otherData: {
 // Which animals live where, and which gems turn up. Rocks appear everywhere.
 // Overlaps are deliberate, so location is a clue but never proof:
 //   Tyrannosaurus + Triceratops share only Red Badlands, Tyrannosaurus + Stegosaurus/Velociraptor
-//   share only Sunbaked Dunes, and Triceratops is the only one of the three
+//   share only Sunbaked Dunes, and "Triceratops" is the only one of the three
 //   ambiguous-femur animals at Muddy Riverbank.
 const siteData = [
   {
@@ -175,14 +175,13 @@ async function seed() {
         siteData.map((site) => ({
           name: site.name,
           description: site.description,
-          image: `${slug(site.name)}.png`, // client/public/images/sites/<slug>.png
+          image: `${slug(site.name)}.png`,
           digCost: site.digCost,
         })),
       )
       .returning({ id: digSites.id, name: digSites.name });
     const siteIdByName = new Map(insertedSites.map((s) => [s.name, s.id]));
 
-    // Weights are placeholders for the Sprint 5 balance pass.
     const fossilIdByName = new Map(insertedFossils.map((f) => [f.name, f.id]));
     const otherIdByName = new Map(insertedOthers.map((o) => [o.name, o.id]));
 

@@ -22,7 +22,7 @@ const GAP = 10;
 const GRID_X = 15;
 const GRID_Y = 62;
 
-// Shown behind each tile, and as the whole tile when an item has no image yet.
+//Shown behind each tile, and as the whole tile when an item has no image yet.
 const KIND_COLOR = { fossil: 0xd9c9a3, rock: 0x8a8a8a, gem: 0x6fb7d9 } as const;
 
 function describeNaming(r: NameResult): string {
@@ -34,14 +34,14 @@ function describeNaming(r: NameResult): string {
   return parts.join(' ');
 }
 
-/** Lists what the player owns, with a detail panel and Name / Sell buttons. */
+/**Lists what the player owns, with a detail panel and Name / Sell buttons. */
 export class InventoryScene extends Phaser.Scene {
   private player!: Player;
   private specimens: Specimen[] = [];
   private page = 0;
-  private selected = 0; // index into this.specimens
+  private selected = 0; //index into this.specimens
   private busy = false;
-  private confirmSellId: number | null = null; // specimen waiting for a second click
+  private confirmSellId: number | null = null; //specimen waiting for a second click
   private dialog: NamingDialog | null = null;
   private tileObjects: Phaser.GameObjects.GameObject[] = [];
   private tileBackgrounds: { index: number; rect: Phaser.GameObjects.Rectangle }[] = [];
@@ -55,7 +55,7 @@ export class InventoryScene extends Phaser.Scene {
   private nameButton!: Phaser.GameObjects.Rectangle;
   private nameLabel!: Phaser.GameObjects.Text;
 
-  private returnTo = 'WorldScene'; // the scene that opened this one
+  private returnTo = 'WorldScene'; //the scene that opened this one
 
   constructor() {
     super('InventoryScene');
@@ -81,7 +81,7 @@ export class InventoryScene extends Phaser.Scene {
     this.headerText = this.add.text(20, 16, '', { fontSize: '20px', color: '#f2e8cf' });
     this.makeButton(width - 100, 30, 160, 40, 'Back', () => this.scene.start(this.returnTo));
 
-    // Leaves room on the right for the Name and Sell buttons.
+    //Leaves room on the right for the Name and Sell buttons.
     this.detailText = this.add.text(20, 392, '', {
       fontSize: '18px',
       color: '#f2e8cf',
@@ -108,7 +108,7 @@ export class InventoryScene extends Phaser.Scene {
       .setVisible(false);
     this.sellButton.on('pointerdown', () => void this.onSellClick());
 
-    // The message about the latest action. It is smaller than the item details above it so the
+    //The message about the latest action. It is smaller than the item details above it so the 
     // two read as different things, and it has its own strip, so the details can't run into it.
     this.noticeText = this.add
       .text(width / 2, 514, '', {
@@ -150,11 +150,11 @@ export class InventoryScene extends Phaser.Scene {
   private async loadInventory() {
     try {
       const data = await fetchInventory(this.player.id);
-      if (!this.scene.isActive()) return; // the player left while we were waiting
+      if (!this.scene.isActive()) return; //the player left while we were waiting
       this.player = data.player;
       this.registry.set('player', this.player);
       this.specimens = data.specimens;
-      // Keep the selection valid if the list changed underneath us.
+      //Keep the selection valid if the list changed underneath us.
       this.selected = Math.min(this.selected, Math.max(0, this.specimens.length - 1));
       this.page = Math.floor(this.selected / PER_PAGE);
     } catch (err) {
@@ -253,7 +253,7 @@ export class InventoryScene extends Phaser.Scene {
         );
       }
 
-      // A green dot marks specimens that have been given a name.
+      //A green dot marks specimens that have been given a name.
       if (specimen.name) {
         this.tileObjects.push(
           this.add.circle(x + TILE / 2 - 13, y - TILE / 2 + 13, 7, 0x4caf50).setStrokeStyle(2, 0x1e1612),
@@ -266,8 +266,8 @@ export class InventoryScene extends Phaser.Scene {
 
   private select(index: number) {
     this.selected = index;
-    this.confirmSellId = null; // changing selection cancels a pending sale
-    // Restyle in place rather than re-rendering, which would destroy the tile being clicked.
+    this.confirmSellId = null; //changing selection cancels a pending sale
+    //Restyle in place rather than re-rendering, which would destroy the tile being clicked.
     for (const { index: i, rect } of this.tileBackgrounds) {
       const isSelected = i === index;
       rect.setStrokeStyle(isSelected ? 4 : 1, isSelected ? 0xffffff : 0x2b1d14);
@@ -336,7 +336,7 @@ export class InventoryScene extends Phaser.Scene {
       const result = await nameSpecimen(this.player.id, specimen.id, genus, species);
       if (!this.scene.isActive()) return null;
       this.closeDialog();
-      await this.loadInventory(); // names and holotype flags can change on other specimens too
+      await this.loadInventory(); //names and holotype flags can change on other specimens too
       if (this.scene.isActive()) this.noticeText.setText(describeNaming(result));
       return null;
     } catch (err) {
@@ -368,12 +368,12 @@ export class InventoryScene extends Phaser.Scene {
     if (!this.scene.isActive()) return null;
     if (isGameEnded(err)) {
       this.closeDialog();
-      this.scene.start('BootScene'); // the game was ended elsewhere: show the results
+      this.scene.start('BootScene'); //The game was ended elsewhere: show the results
       return null;
     }
     if (err instanceof ApiError) {
       if (err.status === 404) {
-        // The specimen or player vanished: close and refresh from the server.
+        //The specimen or player vanished: close and refresh from the server.
         this.closeDialog();
         void this.loadInventory();
         return null;
@@ -390,7 +390,7 @@ export class InventoryScene extends Phaser.Scene {
     const specimen = this.specimens[this.selected];
     if (!specimen) return;
 
-    // Selling can't be undone, so the first click only arms the button.
+    //Selling can't be undone, so the first click only arms the button.
     if (this.confirmSellId !== specimen.id) {
       this.confirmSellId = specimen.id;
       this.updateSellButton();
@@ -434,11 +434,11 @@ export class InventoryScene extends Phaser.Scene {
     } catch (err) {
       if (!this.scene.isActive()) return;
       if (isGameEnded(err)) {
-        this.scene.start('BootScene'); // the game was ended elsewhere: show the results
+        this.scene.start('BootScene'); //the game was ended elsewhere: show the results
         return;
       }
       if (err instanceof ApiError && (err.status === 404 || err.status === 409)) {
-        // Our list was out of date (for example it was sold in another tab): refresh it.
+        //Our list was out of date (for example it was sold in another tab): refresh it.
         this.noticeText.setText(err.message);
         await this.loadInventory();
       } else {

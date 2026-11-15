@@ -164,7 +164,7 @@ export class Miner {
     });
   }
 
-  /** A few grains of dust kicked up where the pickaxe lands. */
+  /**A few grains of dust kicked up where the pickaxe lands. */
   private puff() {
     const { x, y } = this.strikePoint;
     for (let i = 0; i < 6; i++) {

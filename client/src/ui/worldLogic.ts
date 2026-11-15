@@ -21,7 +21,7 @@ export interface Point {
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-/** The index of the zone containing the point, or -1 if it's in none. Edges count as inside. */
+/**The index of the zone containing the point, or -1 if it's in none. Edges count as inside. */
 export function zoneIndexAt(zones: readonly Rect[], x: number, y: number): number {
   return zones.findIndex((z) => x >= z.x && x <= z.x + z.w && y >= z.y && y <= z.y + z.h);
 }

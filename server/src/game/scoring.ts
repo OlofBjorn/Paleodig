@@ -33,21 +33,21 @@
 
 export type Tier = 'high' | 'medium' | 'low';
 
-/** Every number here is a placeholder for the Sprint 5 balance pass. */
+/**Every number here is a placeholder for the Sprint 5 balance pass. */
 export const SCORING = {
-  /** Points per correctly grouped specimen, by diagnostic tier. */
+  /**Points per correctly grouped specimen, by diagnostic tier. */
   credit: { high: 30, medium: 15, low: 5 },
-  /** Points per correct species that isn't a junior synonym. */
+  /**Points per correct species that isn't a junior synonym. */
   speciesPoints: 40,
-  /** Points per valid genus holding at least one such species. */
+  /**Points per valid genus holding at least one such species. */
   genusPoints: 25,
-  /** Points lost per fossil sold, by diagnostic tier. */
+  /**Points lost per fossil sold, by diagnostic tier. */
   soldPenalty: { high: 40, medium: 20, low: 8 },
-  /** Points lost per species that mixes different animals. */
+  /**Points lost per species that mixes different animals. */
   wrongMergePenalty: 25,
-  /** Points lost per species that duplicates an older name for the same animal. Set to 0 to make duplicates merely worthless. */
+  /**Points lost per species that duplicates an older name for the same animal. Set to 0 to make duplicates merely worthless. */
   duplicatePenalty: 15,
-  /** One point per this much money left at the end. */
+  /**One point per this much money left at the end. */
   moneyDivisor: 25,
 } as const;
 
@@ -105,10 +105,10 @@ export interface NameRef {
 
 export interface SpeciesResult extends NameRef {
   genusId: number;
-  /** Whether its genus is valid. False for a dubious, synonymised or invalid genus. */
+  /**Whether its genus is valid. False for a dubious, synonymised or invalid genus. */
   genusValid: boolean;
   verdict: SpeciesVerdict;
-  /** At least one specimen is a high-diagnostic fossil. */
+  /**At least one specimen is a high-diagnostic fossil. */
   hasDiagnostic: boolean;
   specimens: {
     id: number;
@@ -117,11 +117,11 @@ export interface SpeciesResult extends NameRef {
     animal: ScoringAnimal;
     credit: number;
   }[];
-  /** The real animals behind the specimens: several for a wrong merge, otherwise one. */
+  /**The real animals behind the specimens: several for a wrong merge, otherwise one. */
   animals: ScoringAnimal[];
-  /** Set when this name duplicates an older one for the same animal. */
+  /**Set when this name duplicates an older one for the same animal. */
   synonymOf: (NameRef & { sameGenus: boolean }) | null;
-  /** Species points earned: only correct species that aren't junior synonyms earn any. */
+  /**Species points earned: only correct species that aren't junior synonyms earn any. */
   points: number;
 }
 
@@ -146,7 +146,7 @@ export interface GenusResult {
   name: string;
   status: GenusStatus;
   points: number;
-  /** The species the holotype is named in, which decides the genus. Null if it has none. */
+  /**The species the holotype is named in, which decides the genus. Null if it has none. */
   holotypeTaxonId: number | null;
 }
 
@@ -174,7 +174,7 @@ export interface ScoreReport {
   genera: GenusResult[];
   synonyms: SynonymResult[];
   lostFossils: LostFossil[];
-  /** Owned fossils the player never named. */
+  /**Owned fossils the player never named. */
   unnamedFossils: { specimenId: number; itemName: string; animal: ScoringAnimal }[];
 }
 
@@ -211,7 +211,7 @@ export function scoreGame(input: ScoringInput): ScoreReport {
   const taxonById = new Map(input.taxa.map((t) => [t.id, t]));
   const genusById = new Map(input.genera.map((g) => [g.id, g]));
 
-  // A genus is valid exactly when its holotype is currently named within it.
+  //A genus is valid exactly when its holotype is currently named within it.
   const validGenusIds = new Set<number>();
   for (const genus of input.genera) {
     const holotype = specimenById.get(genus.holotypeSpecimenId);
@@ -222,7 +222,7 @@ export function scoreGame(input: ScoringInput): ScoreReport {
     }
   }
 
-  // Sort every fossil into one bucket.
+  //Sort every fossil into one bucket.
   interface Group {
     taxon: ScoringTaxon;
     genus: ScoringGenus;
@@ -234,7 +234,7 @@ export function scoreGame(input: ScoringInput): ScoreReport {
 
   for (const specimen of input.specimens) {
     const fossil = asFossil(specimen);
-    if (!fossil) continue; // rocks and gems never affect the science score
+    if (!fossil) continue;
 
     if (fossil.status === 'sold') {
       lostFossils.push({
@@ -258,13 +258,13 @@ export function scoreGame(input: ScoringInput): ScoreReport {
       continue;
     }
 
-    // Species under an invalid genus are still species, so they're judged like any other.
+    //Species under an invalid genus are still species, so they're judged like any other.
     const group = groups.get(taxon.id) ?? { taxon, genus, members: [] };
     groups.set(taxon.id, group);
     group.members.push(fossil);
   }
 
-  // Judge each species.
+  //Judge each species.
   const judged: { result: SpeciesResult; createdAt: number }[] = [];
   for (const { taxon, genus, members } of groups.values()) {
     const animalIds = [...new Set(members.map((m) => m.animalId))];
@@ -280,7 +280,7 @@ export function scoreGame(input: ScoringInput): ScoreReport {
       result: {
         taxonId: taxon.id,
         genusId: genus.id,
-        genusValid: false, // set once the genera have been judged
+        genusValid: false, //set once the genera have been judged
         genus: genus.name,
         species: taxon.speciesName,
         verdict,
@@ -340,12 +340,12 @@ export function scoreGame(input: ScoringInput): ScoreReport {
 
   const species = judged.sort(byAge).map((e) => e.result);
 
-  // Species points: correct species that aren't junior synonyms.
+  //Species points: correct species that aren't junior synonyms.
   for (const sp of species) {
     if (sp.verdict === 'correct' && sp.synonymOf === null) sp.points = SCORING.speciesPoints;
   }
 
-  // Genera. Each one is judged by the species its holotype is named in.
+  //Genera. Each one is judged by the species its holotype is named in.
   const speciesByTaxonId = new Map(species.map((sp) => [sp.taxonId, sp]));
 
   const genera: GenusResult[] = [...input.genera]
@@ -363,14 +363,14 @@ export function scoreGame(input: ScoringInput): ScoreReport {
 
       let status: GenusStatus;
       if (!holotypeSpecies || holotypeSpecies.verdict !== 'correct') {
-        // Nothing verifies the species the genus is built on, so nothing else in it can rescue it.
+        //Nothing verifies the species the genus is built on, so nothing else in it can rescue it.
         status = 'dubious';
       } else if (holotypeSpecies.synonymOf && !holotypeSpecies.synonymOf.sameGenus) {
-        // Its founding species is just another name for an animal in an older genus.
+        //Its founding species is just another name for an animal in an older genus.
         status = 'synonym';
       } else {
-        // Either a verified species, or a junior synonym of an older species in this same genus,
-        // which still stands on that older species.
+        //Either a verified species, or a junior synonym of an older species in this same genus,
+        //which still stands on that older species.
         status = 'valid';
       }
 

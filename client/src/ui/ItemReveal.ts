@@ -48,7 +48,7 @@ export function revealItem(
   }
   objects.push(icon);
 
-  // Springs up from the ground and overshoots a little before settling.
+  //Springs up from the ground and overshoots a little before settling.
   scene.tweens.add({
     targets: icon,
     x: to.x,

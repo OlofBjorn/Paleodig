@@ -6,7 +6,7 @@ import { normalizeGenus, normalizeSpecies } from '../game/naming.js';
 import { HttpError } from '../lib/httpError.js';
 import { isUuid } from '../lib/uuid.js';
 
-const MAX_INT4 = 2147483647; // specimens.id is a Postgres integer
+const MAX_INT4 = 2147483647; //specimens.id is a Postgres integer
 
 function parseSpecimenId(raw: string): number | null {
   const n = Number(raw);
@@ -15,9 +15,9 @@ function parseSpecimenId(raw: string): number | null {
 
 export async function namingRoutes(app: FastifyInstance) {
   /**
-   * Name a specimen "Genus species", or move it to a different name (reclassification).
+   *Name a specimen "Genus species", or move it to a different name (reclassification).
    *
-   * Rules:
+   *Rules:
    *  - Only owned fossils can be named.
    *  - A brand-new genus name is created with this specimen as its holotype.
    *  - An existing genus name can be used only if that genus is valid (its holotype is
@@ -51,8 +51,8 @@ export async function namingRoutes(app: FastifyInstance) {
 
     try {
       const result = await db.transaction(async (tx) => {
-        // Lock the player's row so naming requests from one player run one at a time.
-        // That removes races on creating genera and on the validity checks below.
+        //Lock the player's row so naming requests from one player run one at a time.
+        //That removes races on creating genera and on the validity checks below.
         const [player] = await tx
           .select({ id: players.id, endedAt: players.endedAt })
           .from(players)
@@ -89,7 +89,7 @@ export async function namingRoutes(app: FastifyInstance) {
             .where(eq(taxa.id, specimen.taxonId));
         }
 
-        // Genus: create it, or check that this specimen is allowed to use the existing one.
+        //Genus: create it, or check that this specimen is allowed to use the existing one.
         const [existingGenus] = await tx
           .select()
           .from(genera)
@@ -105,8 +105,8 @@ export async function namingRoutes(app: FastifyInstance) {
           genus = created;
           genusCreated = true;
         } else if (genus.holotypeSpecimenId !== specimen.id) {
-          // Not the holotype, so the genus must currently be valid: its holotype has to be
-          // named within this very genus.
+          //Not the holotype, so the genus must currently be valid: its holotype has to be
+          //named within this very genus.
           const [holotype] = await tx
             .select({ status: specimens.status, genusId: taxa.genusId })
             .from(specimens)
@@ -123,7 +123,7 @@ export async function namingRoutes(app: FastifyInstance) {
           }
         }
 
-        // Species: reuse the existing one in this genus (grouping), or create it.
+        //Species: reuse the existing one in this genus (grouping), or create it.
         const [existingTaxon] = await tx
           .select()
           .from(taxa)
@@ -169,7 +169,7 @@ export async function namingRoutes(app: FastifyInstance) {
     }
   });
 
-  /** Remove a specimen's name. If it was a genus's holotype, that genus becomes invalid. */
+  /**Remove a specimen's name. If it was a genus's holotype, that genus becomes invalid. */
   app.delete<{ Params: { id: string; specimenId: string } }>(
     '/api/players/:id/specimens/:specimenId/name',
     async (req, reply) => {
@@ -185,7 +185,7 @@ export async function namingRoutes(app: FastifyInstance) {
 
       try {
         const result = await db.transaction(async (tx) => {
-          // Same lock and check as naming: a finished game is frozen.
+          //Same lock and check as naming: a finished game is frozen.
           const [player] = await tx
             .select({ endedAt: players.endedAt })
             .from(players)

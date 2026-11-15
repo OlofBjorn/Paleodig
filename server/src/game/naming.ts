@@ -2,7 +2,7 @@ const NAME_RE = /^[A-Za-z]{3,30}$/;
 
 /**
  * "  toothosaurus " -> "Toothosaurus". Returns null if it isn't a valid genus name
- * (3 to 30 plain letters, no spaces, digits or accents).
+ * (3 to 20 plain letters, no spaces, digits or accents).
  */
 export function normalizeGenus(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;

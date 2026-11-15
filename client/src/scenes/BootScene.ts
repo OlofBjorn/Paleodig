@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { clearStoredPlayerId, fetchPlayer, fetchReport, getStoredPlayerId } from '../api';
 
-/** First scene: resume a saved session if the server still knows it, otherwise ask for a name. */
+//First scene: resume a saved session if the server still knows it, otherwise ask for a name.
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('BootScene');
@@ -42,12 +42,12 @@ export class BootScene extends Phaser.Scene {
           this.scene.start('WorldScene');
         }
       } else {
-        // The server doesn't know this id (e.g. the database was reset): start fresh.
+        //The server doesn't know this id (e.g. the database was reset): start fresh.
         clearStoredPlayerId();
         this.scene.start('NameScene');
       }
     } catch (err) {
-      // Network or server trouble: keep the stored id so the player doesn't lose their game.
+      //Network or server trouble: keep the stored id so the player doesn't lose their game.
       status.setText(`Could not reach the server.\n${String(err)}\n\nClick to retry.`);
       this.input.once('pointerdown', () => this.scene.restart());
     }

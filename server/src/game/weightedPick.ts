@@ -15,13 +15,13 @@ export function pickWeighted<T extends { weight: number }>(
     throw new Error('pickWeighted: total weight must be positive');
   }
 
-  // Walk the list, subtracting weights until the roll lands inside an item's slice.
+  //Walk the list, subtracting weights until the roll lands inside an item's slice.
   let roll = rng() * total;
   for (const item of items) {
     roll -= item.weight;
     if (roll < 0) return item;
   }
 
-  // Only reachable through floating-point rounding; the last item is the right answer.
+  //Only reachable through floating-point rounding; the last item is the right answer.
   return items[items.length - 1];
 }

@@ -6,14 +6,14 @@ const TEXT_COLOR = '#f2e8cf';
 const HINT = 'A new genus name is tied to the first specimen given it: its holotype.';
 
 export interface NamingDialogHandlers {
-  /** Saves the name. Resolves to an error message to show in the dialog, or null on success. */
+  /**Saves the name. Resolves to an error message to show in the dialog, or null on success. */
   onSubmit: (genus: string, species: string) => Promise<string | null>;
-  /** Removes the name. Only provided for specimens that currently have one. */
+  /**Removes the name. Only provided for specimens that currently have one. */
   onRemove?: () => Promise<string | null>;
   onClose: () => void;
 }
 
-/** A modal dialog drawn inside a scene. The scene decides when to close it. */
+/**A modal dialog drawn inside a scene. The scene decides when to close it. */
 export class NamingDialog {
   private scene: Phaser.Scene;
   private specimen: Specimen;
@@ -37,7 +37,7 @@ export class NamingDialog {
   destroy() {
     if (this.destroyed) return;
     this.destroyed = true;
-    this.objects.forEach((o) => o.destroy()); // also removes the <input> elements
+    this.objects.forEach((o) => o.destroy()); //also removes the <input> elements
     this.objects = [];
   }
 
@@ -52,7 +52,7 @@ export class NamingDialog {
     const cy = height / 2;
     const current = this.specimen.name;
 
-    // The shade is interactive on purpose: it swallows clicks meant for the inventory beneath.
+    //The shade is interactive on purpose: it swallows clicks meant for the inventory beneath.
     this.track(this.scene.add.rectangle(cx, cy, width, height, 0x000000, 0.65).setInteractive());
     this.track(this.scene.add.rectangle(cx, cy, 580, 420, 0x3b2f2a).setStrokeStyle(3, 0xc8963e));
 

@@ -58,10 +58,10 @@ export async function specimenRoutes(app: FastifyInstance) {
   });
 
   /**
-   * Sell a specimen for its item's base value.
-   * The row is kept (status 'sold') so the end-game score can count it as lost to science.
-   * If the specimen was named, selling clears its name; if it was a genus's holotype, that
-   * genus becomes invalid automatically, because validity is derived.
+   *Sell a specimen for its item's base value.
+   *The row is kept (status 'sold') so the end-game score can count it as lost to science.
+   *If the specimen was named, selling clears its name; if it was a genus's holotype, that
+   *genus becomes invalid automatically, because validity is derived.
    */
   app.post<{ Params: { id: string; specimenId: string } }>(
     '/api/players/:id/specimens/:specimenId/sell',
@@ -78,8 +78,8 @@ export async function specimenRoutes(app: FastifyInstance) {
 
       try {
         const result = await db.transaction(async (tx) => {
-          // Claim the specimen. The conditions make this atomic: it only succeeds for the
-          // owner, and only while the specimen is still owned, so it can't be sold twice.
+          //Claim the specimen. The conditions make this atomic: it only succeeds for the
+          //owner, and only while the specimen is still owned, so it can't be sold twice.
           const [sold] = await tx
             .update(specimens)
             .set({ status: 'sold', soldAt: new Date(), taxonId: null })
@@ -107,8 +107,8 @@ export async function specimenRoutes(app: FastifyInstance) {
             .from(itemTypes)
             .where(eq(itemTypes.id, sold.itemTypeId));
 
-          // Throwing below rolls back the specimen update too, so a failed payout never
-          // leaves a specimen sold without the player being paid.
+          //Throwing below rolls back the specimen update too, so a failed payout never
+          //leaves a specimen sold without the player being paid.
           const [paid] = await tx
             .update(players)
             .set({ balance: sql`${players.balance} + ${item.baseValue}` })
