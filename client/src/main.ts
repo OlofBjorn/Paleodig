@@ -13,6 +13,7 @@ new Phaser.Game({
   width: 800,
   height: 600,
   backgroundColor: '#3b2f2a',
+  audio: { noAudio: true },
   dom: { createContainer: true }, // needed for the name <input>
   scene: [BootScene, NameScene, WorldScene, InventoryScene, DiscoveriesScene, EndScene],
   scale: {
