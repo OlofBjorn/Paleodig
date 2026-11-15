@@ -9,12 +9,12 @@ import { WorldScene } from './scenes/WorldScene';
 
 new Phaser.Game({
   type: Phaser.AUTO,
-  parent: 'app', // the <div id="app"> in index.html
+  parent: 'app', //the <div id="app"> in index.html
   width: 800,
   height: 600,
   backgroundColor: '#3b2f2a',
   audio: { noAudio: true },
-  dom: { createContainer: true }, // needed for the name <input>
+  dom: { createContainer: true }, //needed for the name <input>
   scene: [BootScene, NameScene, WorldScene, InventoryScene, DiscoveriesScene, EndScene],
   scale: {
     mode: Phaser.Scale.FIT,
