@@ -23,49 +23,55 @@ Once you believe your work is done, you can press the end button to end the game
 Step 1:
 
 Clone the depository:
-´´´
+```
     git clone https://github.com/OlofBjorn/Paleodig
     cd Paleodig
-´´´
+```
 
 Step 2:
 
 Install NPM:
-´´´
+```
     npm install
-´´´
+```
 
 Step 3:
 
 Create local env:
-´´´
-    cp server/.env.example server/.env
-´´´
+```
+cp server/.env.example server/.env
+```
 
 Step 4:
 
-Start PostgreSQL:
-´´´
-    docker compose up -d
-´´´
+Install docker:
+https://www.docker.com/
+
 
 Step 5:
 
-Create the database schema and load game data:
-´´´
-    npm run db:migrate -w server
-    npm run db:seed -w server
-´´´
+Start PostgreSQL:
+```
+docker compose up -d
+```
 
 Step 6:
 
+Create the database schema and load game data:
+```
+    npm run db:migrate -w server
+    npm run db:seed -w server
+```
+
+Step 7:
+
 Run the server and client in two terminals:
-´´´
+```
     npm run dev:server
-´´´
-´´´
+```
+```
     npm run dev:server
-´´´
+```
 
 ------
 
