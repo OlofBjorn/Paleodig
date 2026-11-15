@@ -44,9 +44,9 @@ cp server/.env.example server/.env
 
 Step 4:
 
-Install docker:
+Install docker desktop:
 https://www.docker.com/
-
+(Signup required)
 
 Step 5:
 
