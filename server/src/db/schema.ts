@@ -26,7 +26,7 @@ export const specimenStatus = pgEnum('specimen_status', ['owned', 'sold']);
 /* Seeded catalog (identical for every player)                                */
 /* -------------------------------------------------------------------------- */
 
-/** The hidden truth. Never send this table (or itemTypes.animalId) to the client before the end game. */
+/**The hidden truth. Never send this table (or itemTypes.animalId) to the client before the end game. */
 export const animals = pgTable(
   'animals',
   {
@@ -67,6 +67,7 @@ export const digSites = pgTable('dig_sites', {
   id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
   name: text('name').notNull(),
   description: text('description').notNull(),
+  image: text('image').notNull().default(''),
   digCost: integer('dig_cost').notNull(),
 });
 
@@ -104,11 +105,11 @@ export const players = pgTable(
   },
   (t) => [
     check('players_balance_nonneg', sql`${t.balance} >= 0`),
-    check('players_name_length', sql`char_length(${t.name}) between 1 and 40`),
+    check('players_name_length', sql`char_length(${t.name}) between 1 and 20`),
   ],
 );
 
-/** One row per thing the player has dug up. Sold rows are kept for scoring. */
+/**One row per thing the player has dug up. Sold rows are kept for scoring. */
 export const specimens = pgTable(
   'specimens',
   {
@@ -120,17 +121,19 @@ export const specimens = pgTable(
       .notNull()
       .references(() => itemTypes.id),
     status: specimenStatus('status').notNull().default('owned'),
-    // The species this specimen is currently assigned to. Null = unnamed.
+    //The species this specimen is currently assigned to. Null = unnamed.
     taxonId: integer('taxon_id').references((): AnyPgColumn => taxa.id, {
       onDelete: 'set null',
     }),
+    //Where it was dug up. Null only for specimens found before dig sites were tracked.
+    foundSiteId: integer('found_site_id').references(() => digSites.id),
     foundAt: timestamp('found_at', { withTimezone: true }).notNull().defaultNow(),
     soldAt: timestamp('sold_at', { withTimezone: true }),
   },
   (t) => [
     index('specimens_player_idx').on(t.playerId),
     index('specimens_taxon_idx').on(t.taxonId),
-    // A sold specimen can't be named, and sold_at is set exactly when status = 'sold'.
+    //A sold specimen can't be named, and sold_at is set exactly when status = 'sold'.
     check('specimens_sold_not_named', sql`${t.status} <> 'sold' or ${t.taxonId} is null`),
     check('specimens_sold_at_matches', sql`(${t.status} = 'sold') = (${t.soldAt} is not null)`),
   ],
@@ -157,7 +160,7 @@ export const genera = pgTable(
   (t) => [unique('genera_player_name_unique').on(t.playerId, t.name)],
 );
 
-/** A species within a genus: "Toothosaurus rex". */
+/**A species within a genus: "Tyrannosaurus rex". */
 export const taxa = pgTable(
   'taxa',
   {

@@ -1,9 +1,10 @@
 import { sql } from 'drizzle-orm';
-import { db } from './index'; // adjust if your db export is named differently
-import { animals, digSites, itemTypes, siteSpawns } from './schema';
+import { db } from './index.js';
+import { animals, digSites, itemTypes, siteSpawns } from './schema.js';
 
 /**
- * Placeholder seed data. Images are empty strings until the art pass.
+ * Placeholder seed data. Each item's image is <slug of its name>.png; until that file exists
+ * the client shows a coloured fallback tile.
  *
  * Built to exercise every end-game outcome:
  *  - Same animal described twice (synonymy): every animal has 2+ distinct fossils,
@@ -19,8 +20,12 @@ type Size = 'small' | 'medium' | 'large';
 
 const TIER_VALUE: Record<Tier, number> = { high: 120, medium: 60, low: 25 };
 const SIZE_MULTIPLIER: Record<Size, number> = { small: 1, medium: 1.5, large: 2 };
-const TIER_WEIGHT: Record<Tier, number> = { high: 2, medium: 4, low: 6 }; // rarer = more diagnostic
+const TIER_WEIGHT: Record<Tier, number> = { high: 2, medium: 4, low: 6 }; //rarer = more diagnostic
 
+const slug = (name: string) =>
+  name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+//Real dinosaur names are used as placeholder identities in the code database before the player names them.
 const animalData = [
   { genus: 'Tyrannosaurus', species: 'rex' },
   { genus: 'Triceratops', species: 'horridus' },
@@ -30,36 +35,36 @@ const animalData = [
 ];
 
 const fossilData: {
-  animal: string; // matches animalData.genus
+  animal: string; //matches animalData.genus
   boneType: string;
   diagnostic: Tier;
   size: Size;
   name: string;
   description: string;
 }[] = [
-  // Tyrannosaurus
+  //Tyrannosaurus
   { animal: 'Tyrannosaurus', boneType: 'skull', diagnostic: 'high', size: 'large', name: 'Massive Skull', description: 'A huge, deep skull with a robust snout and sockets for enormous teeth.' },
   { animal: 'Tyrannosaurus', boneType: 'arm', diagnostic: 'medium', size: 'small', name: 'Tiny Forelimb', description: 'A strangely small, powerful arm ending in two clawed fingers.' },
   { animal: 'Tyrannosaurus', boneType: 'tooth', diagnostic: 'medium', size: 'small', name: 'Thick Serrated Tooth', description: 'A thick, banana-shaped tooth with coarse serrations along its edges.' },
   { animal: 'Tyrannosaurus', boneType: 'femur', diagnostic: 'low', size: 'large', name: 'Heavy Limb Bone', description: 'A heavy, straight limb bone with a thick shaft.' },
 
-  // Triceratops
+  //Triceratops
   { animal: 'Triceratops', boneType: 'skull', diagnostic: 'high', size: 'large', name: 'Horned Frill Skull', description: 'A giant skull with a wide bony frill and sockets for three facial horns.' },
   { animal: 'Triceratops', boneType: 'horn', diagnostic: 'medium', size: 'medium', name: 'Curved Horn Core', description: 'A long, curved, conical bone that was once sheathed in horn.' },
   { animal: 'Triceratops', boneType: 'femur', diagnostic: 'low', size: 'large', name: 'Stout Limb Bone', description: 'A heavy, straight limb bone with a thick shaft.' },
   { animal: 'Triceratops', boneType: 'rib', diagnostic: 'low', size: 'medium', name: 'Broad Rib', description: 'A long, curved rib, broad and strongly built.' },
 
-  // Stegosaurus
+  //Stegosaurus
   { animal: 'Stegosaurus', boneType: 'plate', diagnostic: 'high', size: 'large', name: 'Diamond Plate', description: 'A broad, thin, diamond-shaped plate of bone with a rough surface.' },
   { animal: 'Stegosaurus', boneType: 'spike', diagnostic: 'medium', size: 'medium', name: 'Tail Spike', description: 'A long, pointed spike of bone with a hollow base.' },
   { animal: 'Stegosaurus', boneType: 'femur', diagnostic: 'low', size: 'large', name: 'Columnar Limb Bone', description: 'A tall, straight, pillar-like limb bone.' },
 
-  // Parasaurolophus
+  //Parasaurolophus
   { animal: 'Parasaurolophus', boneType: 'skull', diagnostic: 'high', size: 'large', name: 'Crested Skull', description: 'A long skull with a hollow, backward-sweeping tube of bone on top.' },
   { animal: 'Parasaurolophus', boneType: 'jaw', diagnostic: 'medium', size: 'medium', name: 'Many-Toothed Jaw', description: 'A broad jaw packed with hundreds of tiny grinding teeth.' },
   { animal: 'Parasaurolophus', boneType: 'vertebra', diagnostic: 'low', size: 'medium', name: 'Spined Vertebra', description: 'A backbone segment with a tall spine on top.' },
 
-  // Velociraptor (no "high" diagnostic fossil: always "uncertain" at best)
+  //Velociraptor (no "high" diagnostic fossil: always "uncertain" at best)
   { animal: 'Velociraptor', boneType: 'claw', diagnostic: 'medium', size: 'small', name: 'Sickle Claw', description: 'A strongly curved, razor-sharp claw from a foot.' },
   { animal: 'Velociraptor', boneType: 'femur', diagnostic: 'low', size: 'small', name: 'Slender Limb Bone', description: 'A straight limb bone with a thick shaft.' },
   { animal: 'Velociraptor', boneType: 'vertebra', diagnostic: 'low', size: 'small', name: 'Light Vertebra', description: 'A small, lightly built backbone segment.' },
@@ -80,6 +85,35 @@ const otherData: {
   { kind: 'gem', name: 'Amber Nugget', description: 'A warm golden lump of fossil resin. Pretty, but not a bone.', size: 'small', baseValue: 80, weight: 2 },
 ];
 
+// Which animals live where, and which gems turn up. Rocks appear everywhere.
+// Overlaps are deliberate, so location is a clue but never proof:
+//   Tyrannosaurus + Triceratops share only Red Badlands, Tyrannosaurus + Stegosaurus/Velociraptor
+//   share only Sunbaked Dunes, and "Triceratops" is the only one of the three
+//   ambiguous-femur animals at Muddy Riverbank.
+const siteData = [
+  {
+    name: 'Red Badlands',
+    description: 'Eroded red cliffs where the bones lie close to the surface.',
+    digCost: 10,
+    animals: ['Tyrannosaurus', 'Triceratops', 'Parasaurolophus'],
+    gems: ['Quartz Crystal'],
+  },
+  {
+    name: 'Muddy Riverbank',
+    description: 'An ancient floodplain, thick with sediment and fossilised resin.',
+    digCost: 10,
+    animals: ['Triceratops', 'Stegosaurus', 'Parasaurolophus'],
+    gems: ['Quartz Crystal', 'Amber Nugget'],
+  },
+  {
+    name: 'Sunbaked Dunes',
+    description: 'Wind-scoured dunes hiding old giants and small, swift hunters.',
+    digCost: 10,
+    animals: ['Tyrannosaurus', 'Stegosaurus', 'Velociraptor'],
+    gems: ['Quartz Crystal'],
+  },
+];
+
 async function seed() {
   // Dev-only: wipe catalog tables. CASCADE also clears specimens, genera and taxa.
   await db.execute(
@@ -97,7 +131,7 @@ async function seed() {
       kind: 'fossil' as const,
       name: f.name,
       description: f.description,
-      image: '', // placeholder until the art pass
+      image: `${slug(f.name)}.png`,
       size: f.size,
       baseValue: Math.round(TIER_VALUE[f.diagnostic] * SIZE_MULTIPLIER[f.size]),
       animalId: animalIdByGenus.get(f.animal)!,
@@ -109,7 +143,7 @@ async function seed() {
       kind: o.kind,
       name: o.name,
       description: o.description,
-      image: '',
+      image: `${slug(o.name)}.png`,
       size: o.size,
       baseValue: o.baseValue,
     }));
@@ -123,36 +157,56 @@ async function seed() {
       .values(otherRows)
       .returning({ id: itemTypes.id, name: itemTypes.name });
 
-    const [site] = await tx
-      .insert(digSites)
-      .values({
-        name: 'Placeholder Quarry',
-        description: 'A dusty quarry with plenty of rock and the occasional bone.',
-        digCost: 10,
-      })
-      .returning({ id: digSites.id });
+    // Guard against typos: every animal and gem named in siteData must exist.
+    const animalNames = new Set(animalData.map((a) => a.genus));
+    const otherNames = new Set(otherData.map((o) => o.name));
+    for (const site of siteData) {
+      for (const a of site.animals) {
+        if (!animalNames.has(a)) throw new Error(`siteData: unknown animal "${a}" at ${site.name}`);
+      }
+      for (const g of site.gems) {
+        if (!otherNames.has(g)) throw new Error(`siteData: unknown gem "${g}" at ${site.name}`);
+      }
+    }
 
-    // Weights are placeholders for the Sprint 5 balance pass.
+    const insertedSites = await tx
+      .insert(digSites)
+      .values(
+        siteData.map((site) => ({
+          name: site.name,
+          description: site.description,
+          image: `${slug(site.name)}.png`,
+          digCost: site.digCost,
+        })),
+      )
+      .returning({ id: digSites.id, name: digSites.name });
+    const siteIdByName = new Map(insertedSites.map((s) => [s.name, s.id]));
+
     const fossilIdByName = new Map(insertedFossils.map((f) => [f.name, f.id]));
     const otherIdByName = new Map(insertedOthers.map((o) => [o.name, o.id]));
 
-    const spawnRows = [
-      ...fossilData.map((f) => ({
-        siteId: site.id,
-        itemTypeId: fossilIdByName.get(f.name)!,
-        weight: TIER_WEIGHT[f.diagnostic],
-      })),
-      ...otherData.map((o) => ({
-        siteId: site.id,
-        itemTypeId: otherIdByName.get(o.name)!,
-        weight: o.weight,
-      })),
-    ];
+    const spawnRows = siteData.flatMap((site) => {
+      const siteId = siteIdByName.get(site.name)!;
+
+      const fossils = fossilData
+        .filter((f) => site.animals.includes(f.animal))
+        .map((f) => ({
+          siteId,
+          itemTypeId: fossilIdByName.get(f.name)!,
+          weight: TIER_WEIGHT[f.diagnostic],
+        }));
+
+      const others = otherData
+        .filter((o) => o.kind === 'rock' || site.gems.includes(o.name))
+        .map((o) => ({ siteId, itemTypeId: otherIdByName.get(o.name)!, weight: o.weight }));
+
+      return [...fossils, ...others];
+    });
     await tx.insert(siteSpawns).values(spawnRows);
   });
 
   console.log(
-    `Seeded ${animalData.length} animals, ${fossilData.length} fossils, ${otherData.length} other items, 1 dig site.`,
+    `Seeded ${animalData.length} animals, ${fossilData.length} fossils, ${otherData.length} other items, ${siteData.length} dig sites.`,
   );
 }
 
