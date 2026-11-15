@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { createPlayer, storePlayerId } from '../api';
 
-const MAX_NAME_LENGTH = 40;
+const MAX_NAME_LENGTH = 20;
 
 /** Asks for the player's name and creates their session. */
 export class NameScene extends Phaser.Scene {

@@ -105,7 +105,7 @@ export const players = pgTable(
   },
   (t) => [
     check('players_balance_nonneg', sql`${t.balance} >= 0`),
-    check('players_name_length', sql`char_length(${t.name}) between 1 and 40`),
+    check('players_name_length', sql`char_length(${t.name}) between 1 and 20`),
   ],
 );
 

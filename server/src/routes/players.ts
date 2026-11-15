@@ -5,7 +5,7 @@ import { players } from '../db/schema.js';
 import { playerFields, toPlayer } from '../lib/player.js';
 import { isUuid } from '../lib/uuid.js';
 
-const MAX_NAME_LENGTH = 40;
+const MAX_NAME_LENGTH = 20;
 
 export async function playerRoutes(app: FastifyInstance) {
   /** Start a new game session. The returned id is what the client keeps in localStorage. */
