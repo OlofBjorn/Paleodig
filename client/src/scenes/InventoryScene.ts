@@ -20,7 +20,7 @@ const PER_PAGE = COLS * ROWS;
 const TILE = 100;
 const GAP = 10;
 const GRID_X = 15;
-const GRID_Y = 70;
+const GRID_Y = 62;
 
 // Shown behind each tile, and as the whole tile when an item has no image yet.
 const KIND_COLOR = { fossil: 0xd9c9a3, rock: 0x8a8a8a, gem: 0x6fb7d9 } as const;
@@ -82,14 +82,14 @@ export class InventoryScene extends Phaser.Scene {
     this.makeButton(width - 100, 30, 160, 40, 'Back', () => this.scene.start(this.returnTo));
 
     // Leaves room on the right for the Name and Sell buttons.
-    this.detailText = this.add.text(20, 428, '', {
+    this.detailText = this.add.text(20, 392, '', {
       fontSize: '18px',
       color: '#f2e8cf',
       wordWrap: { width: 540 },
     });
 
     this.nameButton = this.add
-      .rectangle(width - 120, 418, 200, 40, 0x4a7a5a)
+      .rectangle(width - 120, 410, 200, 40, 0x4a7a5a)
       .setInteractive({ useHandCursor: true })
       .setVisible(false);
     this.nameLabel = this.add
@@ -99,7 +99,7 @@ export class InventoryScene extends Phaser.Scene {
     this.nameButton.on('pointerdown', () => this.openNaming());
 
     this.sellButton = this.add
-      .rectangle(width - 120, 470, 200, 44, 0xb5523b)
+      .rectangle(width - 120, 460, 200, 44, 0xb5523b)
       .setInteractive({ useHandCursor: true })
       .setVisible(false);
     this.sellLabel = this.add
@@ -108,20 +108,22 @@ export class InventoryScene extends Phaser.Scene {
       .setVisible(false);
     this.sellButton.on('pointerdown', () => void this.onSellClick());
 
+    // The message about the latest action. It is smaller than the item details above it so the
+    // two read as different things, and it has its own strip, so the details can't run into it.
     this.noticeText = this.add
-      .text(width / 2, 538, '', {
-        fontSize: '18px',
+      .text(width / 2, 514, '', {
+        fontSize: '14px',
         color: '#f2e8cf',
         align: 'center',
         wordWrap: { width: width - 40 },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5, 0);
 
-    this.makeButton(90, 570, 130, 36, 'Previous', () => this.changePage(-1));
+    this.makeButton(90, 578, 130, 36, 'Previous', () => this.changePage(-1));
     this.pageText = this.add
-      .text(width / 2, 575, '', { fontSize: '18px', color: '#f2e8cf' })
+      .text(width / 2, 578, '', { fontSize: '18px', color: '#f2e8cf' })
       .setOrigin(0.5);
-    this.makeButton(width - 90, 570, 130, 36, 'Next', () => this.changePage(1));
+    this.makeButton(width - 90, 578, 130, 36, 'Next', () => this.changePage(1));
 
     this.statusText = this.add
       .text(width / 2, height / 2 - 40, 'Loading your finds...', {
@@ -278,7 +280,7 @@ export class InventoryScene extends Phaser.Scene {
       const { item, name, site } = specimen;
       const found = site ? `  |  Found at ${site.name}` : '';
       const named = name
-        ? `\nNamed: ${name.genus} ${name.species}${name.isHolotype ? ` (holotype of ${name.genus})` : ''}`
+        ? `\nNamed: ${name.genus} ${name.species}${name.isHolotype ? ` (genus holotype)` : ''}`
         : '';
       this.detailText.setText(
         `${item.name}  (${item.kind}, ${item.size})\n${item.description}\nWorth ${item.baseValue}${found}${named}`,

@@ -121,7 +121,7 @@ export class NamingDialog {
       ),
     );
     const input = dom.node as HTMLInputElement;
-    input.maxLength = 30;
+    input.maxLength = 20;
     input.placeholder = placeholder;
     input.autocomplete = 'off';
     input.spellcheck = false;
@@ -156,7 +156,7 @@ export class NamingDialog {
     const species = normalizeSpecies(this.speciesInput.value);
     const current = this.specimen.name;
 
-    this.previewText.setText(genus && species ? `${genus} ${species}` : 'Use 3 to 30 letters for each name.');
+    this.previewText.setText(genus && species ? `${genus} ${species}` : 'Use 3 to 20 letters for each name.');
 
     if (current?.isHolotype && genus && genus !== current.genus) {
       this.warningText.setText(
@@ -173,7 +173,7 @@ export class NamingDialog {
     const genus = normalizeGenus(this.genusInput.value);
     const species = normalizeSpecies(this.speciesInput.value);
     if (!genus || !species) {
-      this.errorText.setText('Each name must be 3 to 30 letters (A-Z only).');
+      this.errorText.setText('Each name must be 3 to 20 letters (A-Z only).');
       return;
     }
 
